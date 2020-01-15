@@ -141,7 +141,7 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
             {
                 // create checkpoint & blip
                 marker.checkpoint = GTA.World.CreateCheckpoint (
-                                    new GTA.CheckpointCustomIcon(CheckpointCustomIconStyle.Number, 0),
+                                    new GTA.CheckpointCustomIcon(CheckpointCustomIconStyle.Number, Convert.ToByte(number)),
                                     pos, pos, radius, Color.FromArgb(255, 255, 66));
                 marker.blip = GTA.World.CreateBlip(pos);
             }
