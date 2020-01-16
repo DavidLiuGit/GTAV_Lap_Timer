@@ -26,6 +26,7 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
             Tick += onTick;
             KeyDown += onKeyDown;
             Interval = 1;
+            Aborted += OnShutdown;
         }
 
         private void onTick(object sender, EventArgs e)
@@ -55,7 +56,7 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
 
 
 
-        // ------------- KEY PRESS EVENT LISTENER -----------------
+        // ------------- EVENT LISTENERS/HANDLERS -----------------
         private void onKeyDown(object sender, KeyEventArgs e)
         {
             // enter/exit placement mode with F5
@@ -81,7 +82,7 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
 
                     // Ctrl+D: clear all SectorCheckpoints, and delete any blips & checkpoints from World
                     case Keys.D:
-                        clearAllCheckpoints();
+                        clearAllSectorCheckpoints();
                         break;
 
                     // Ctrl+L: toggle Lap Race mode
@@ -91,6 +92,16 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
                         break;
                 }
             }
+        }
+
+
+
+        /// <summary>
+        /// Script destructor. Clean up any objects created to prevent memory leaks.
+        /// </summary>
+        private void OnShutdown(object sender, EventArgs e)
+        {
+            clearAllSectorCheckpoints();
         }
 
 
@@ -203,34 +214,13 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
         /// <summary>
         /// Clear all SectorCheckpoints, and delete all blips & checkpoints from World
         /// </summary>
-        private void clearAllCheckpoints(bool verbose = true)
+        private void clearAllSectorCheckpoints(bool verbose = true)
         {
-            // clear markedSectorCheckpoints
-            markedSectorCheckpoints.Clear();
-
-            // clear World blips & checkpoints
-            deleteAllWorldMarkers();
+            while (markedSectorCheckpoints.Count > 0)
+                deleteLastSectorCheckpoint();
 
             if (verbose)
                 GTA.UI.Screen.ShowSubtitle("Lap Timer: All saved SectorCheckpoints cleared. All blips & checkpoints deleted.");
-        }
-
-
-
-        /// <summary>
-        /// Delete all Blips & Checkpoints from World
-        /// </summary>
-        private void deleteAllWorldMarkers()
-        {
-            // delete all blips
-            Blip[] allBlips = GTA.World.GetAllBlips();
-            for (int i = 0; i < allBlips.Length; i++)
-                allBlips[i].Delete();
-
-            // delete all checkpoints
-            Checkpoint[] allChkpts = GTA.World.GetAllCheckpoints();
-            for (int i = 0; i < allChkpts.Length; i++)
-                allChkpts[i].Delete();
         }
 
         #endregion
