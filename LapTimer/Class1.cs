@@ -83,6 +83,12 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
                     case Keys.D:
                         clearAllCheckpoints();
                         break;
+
+                    // Ctrl+L: toggle Lap Race mode
+                    case Keys.L:
+                        lapRace = !lapRace;
+                        GTA.UI.Screen.ShowSubtitle("Lap Timer: lap race flag: " + lapRace);
+                        break;
                 }
             }
         }
