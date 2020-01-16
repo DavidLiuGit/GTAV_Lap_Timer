@@ -401,8 +401,9 @@ namespace LapTimer
 			activateRaceCheckpoint(1);
 
 			// teleport player to the starting checkpoint; set player orientation
-			Game.Player.Character.CurrentVehicle.Position = activeCheckpoint.position;
-			Game.Player.Character.CurrentVehicle.Quaternion = activeCheckpoint.quarternion;
+			SectorCheckpoint start = markedSectorCheckpoints[0];
+			Game.Player.Character.CurrentVehicle.Position = start.position;
+			Game.Player.Character.CurrentVehicle.Quaternion = start.quarternion;
 
 			if (verbose)
 				GTA.UI.Screen.ShowSubtitle("Lap Timer: Starting race...");
