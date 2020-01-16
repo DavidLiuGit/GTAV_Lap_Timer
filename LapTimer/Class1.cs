@@ -45,9 +45,10 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
         // flags
         bool placementMode = false;
         bool raceMode = false;
+        bool lapRace = false;                   // if true, the 1st SectorCheckpoint will be used as the end of a lap
 
         // constants
-        const float checkpointRadius = 8.0f;
+        const float checkpointRadius = 8.0f;    // radius in meters of a checkpoint
 
         // placement mode variables
         List<SectorCheckpoint> markedSectorCheckpoints = new List<SectorCheckpoint>();                // add to this list when player marks a position
@@ -76,6 +77,11 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
                     // Ctrl+Z: delete (undo) last SectorCheckpoint
                     case Keys.Z:
                         deleteLastSectorCheckpoint();
+                        break;
+
+                    // Ctrl+D: clear all SectorCheckpoints, and delete any blips & checkpoints from World
+                    case Keys.D:
+                        clearAllCheckpoints();
                         break;
                 }
             }
@@ -184,6 +190,41 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
             // print output if verbose
             if (verbose)
                 GTA.UI.Screen.ShowSubtitle("Lap Timer: deleted checkpoint #" + checkpointNum);
+        }
+
+
+
+        /// <summary>
+        /// Clear all SectorCheckpoints, and delete all blips & checkpoints from World
+        /// </summary>
+        private void clearAllCheckpoints(bool verbose = true)
+        {
+            // clear markedSectorCheckpoints
+            markedSectorCheckpoints.Clear();
+
+            // clear World blips & checkpoints
+            deleteAllWorldMarkers();
+
+            if (verbose)
+                GTA.UI.Screen.ShowSubtitle("Lap Timer: All saved SectorCheckpoints cleared. All blips & checkpoints deleted.");
+        }
+
+
+
+        /// <summary>
+        /// Delete all Blips & Checkpoints from World
+        /// </summary>
+        private void deleteAllWorldMarkers()
+        {
+            // delete all blips
+            Blip[] allBlips = GTA.World.GetAllBlips();
+            for (int i = 0; i < allBlips.Length; i++)
+                allBlips[i].Delete();
+
+            // delete all checkpoints
+            Checkpoint[] allChkpts = GTA.World.GetAllCheckpoints();
+            for (int i = 0; i < allChkpts.Length; i++)
+                allChkpts[i].Delete();
         }
 
         #endregion
