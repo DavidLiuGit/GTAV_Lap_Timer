@@ -11,7 +11,7 @@ using GTA;
 using GTA.Native;
 using GTA.Math;
 
-namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
+namespace LapTimer
 {
     public class Main : Script
     {
@@ -123,7 +123,16 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
             if (!placementMode) 
             {
                 placementMode = true;
+                redrawAllSectorCheckpoints();           // if any markedSectorPoints already exist, redraw their blips & checkpoints
                 GTA.UI.Screen.ShowSubtitle("Lap Timer: Entering placement mode. Mark sector checkpoints using Ctrl+X.");
+            }
+
+            // if exiting placement mode
+            else
+            {
+                hideAllSectorCheckpoints();             // hide blips and checkpoints, but keep the metadata of SectorCheckpoints
+                placementMode = false;
+                GTA.UI.Screen.ShowSubtitle("Lap Timer: Exiting placement mode.");
             }
         }
 
@@ -197,9 +206,9 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
             SectorCheckpoint chkpt = markedSectorCheckpoints.Last();
             int checkpointNum = chkpt.number;
 
-            // delete its Marker (Blip + Checkpoint) from the World
-            chkpt.marker.blip.Delete();
-            chkpt.marker.checkpoint.Delete();
+            // delete its Marker (Blip + Checkpoint) from the World, if they are defined
+            if (chkpt.marker.blip != null) chkpt.marker.blip.Delete();
+            if (chkpt.marker.checkpoint != null) chkpt.marker.checkpoint.Delete();
 
             // remove the checkpoint from the list
             markedSectorCheckpoints.RemoveAt(markedSectorCheckpoints.Count - 1);
@@ -223,11 +232,41 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
                 GTA.UI.Screen.ShowSubtitle("Lap Timer: All saved SectorCheckpoints cleared. All blips & checkpoints deleted.");
         }
 
+
+
+        /// <summary>
+        /// Hide the blips and checkpoints of all saved SectorCheckpoints.
+        /// </summary>
+        private void hideAllSectorCheckpoints()
+        {
+            for (int i = 0; i < markedSectorCheckpoints.Count; i++)
+            {
+                //if (markedSectorCheckpoints[i].marker.checkpoint != null)
+                    markedSectorCheckpoints[i].marker.checkpoint.Delete();          // delete the checkpoint
+                //if (markedSectorCheckpoints[i].marker.blip != null)
+                    markedSectorCheckpoints[i].marker.blip.Delete();                // delete the blip
+            }
+        }
+
+        /// <summary>
+        /// Redraw the blips and checkpoints of all saved SectorCheckpoints. Should only be used in placement mode.
+        /// </summary>
+        private void redrawAllSectorCheckpoints()
+        {
+            for (int i = 0; i < markedSectorCheckpoints.Count; i++)
+            {
+                // copy the instance of SectorCheckpoint and replace marker with a new instance returned by placeMarker
+                SectorCheckpoint newCheckpoint = markedSectorCheckpoints[i];
+                newCheckpoint.marker = placeMarker(markedSectorCheckpoints[i].position, MarkerType.placement, markedSectorCheckpoints[i].number);
+                markedSectorCheckpoints[i] = newCheckpoint;                         // assign new instance of SectorCheckpoint to the original index in the List
+            }
+        }
+
         #endregion
     }
 
 
-
+    #region structs
     struct SectorCheckpoint
     {
         public Vector3 position;
@@ -246,7 +285,7 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
         raceArrow,
         raceFinish,
     }
-
+    #endregion
 
 }
 
