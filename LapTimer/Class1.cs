@@ -42,8 +42,12 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
 
 
         // ------------- PROPERTIES/VARIABLES -----------------
+        // flags
         bool placementMode = false;
         bool raceMode = false;
+
+        // constants
+        const float checkpointRadius = 8.0f;
 
         // placement mode variables
         List<SectorCheckpoint> markedSectorCheckpoints = new List<SectorCheckpoint>();                // add to this list when player marks a position
@@ -66,10 +70,12 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
                 {
                     // Ctrl+X: add a checkpoint
                     case Keys.X:
-                        markedSectorCheckpoints.Add(markPlayerPosition());
+                        markedSectorCheckpoints.Add(createSectorCheckpoint());
                         break;
 
-                    default:
+                    // Ctrl+Z: delete (undo) last SectorCheckpoint
+                    case Keys.Z:
+                        deleteLastSectorCheckpoint();
                         break;
                 }
             }
@@ -104,7 +110,7 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
         /// Mark player's current position, and create a blip & checkpoint.
         /// </summary>
         /// <returns>Instance of </returns>
-        private SectorCheckpoint markPlayerPosition()
+        private SectorCheckpoint createSectorCheckpoint(bool verbose = true)
         {
             // instantiate empty SectorCheckpoint
             SectorCheckpoint newCheckpoint = new SectorCheckpoint();
@@ -121,6 +127,10 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
             // place marker (blip + checkpoint)
             newCheckpoint.marker = placeMarker(playerPos, MarkerType.placement, checkpointNum);
 
+            // print output if verbose
+            if (verbose)
+                GTA.UI.Screen.ShowSubtitle("Lap Timer: placed checkpoint #" + checkpointNum);
+
             return newCheckpoint;
         }
 
@@ -131,7 +141,7 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
         /// </summary>
         /// <param name="pos">Position as instance of Vector3</param>
         /// <param name="type">Indicate whether checkpoint is to be used in a race or in placement mode</param>
-        private Marker placeMarker(Vector3 pos, MarkerType type, int number = 0, float radius = 8.0f)
+        private Marker placeMarker(Vector3 pos, MarkerType type, int number = 0, float radius = checkpointRadius)
         {
             // instantiate empty Marker
             Marker marker = new Marker();
@@ -148,7 +158,33 @@ namespace LapTimer // !!!! IMPORTANT REPLACE THIS WITH YOUR MODS NAME !!!!
 
             return marker;
         }
-        
+
+
+
+        /// <summary>
+        /// Delete the last <c>SectorCheckpoint</c>. First delete its <c>Marker</c>, then remove the checkpoint from <c>markedSectorCheckpoints</c>.
+        /// </summary>
+        private void deleteLastSectorCheckpoint(bool verbose = true)
+        {
+            // if markedSectorCheckpoints is empty, do nothing
+            if (markedSectorCheckpoints.Count <= 0)
+                return;
+
+            // get the last checkpoint in markedSectorCheckpoints
+            SectorCheckpoint chkpt = markedSectorCheckpoints.Last();
+            int checkpointNum = chkpt.number;
+
+            // delete its Marker (Blip + Checkpoint) from the World
+            chkpt.marker.blip.Delete();
+            chkpt.marker.checkpoint.Delete();
+
+            // remove the checkpoint from the list
+            markedSectorCheckpoints.RemoveAt(markedSectorCheckpoints.Count - 1);
+
+            // print output if verbose
+            if (verbose)
+                GTA.UI.Screen.ShowSubtitle("Lap Timer: deleted checkpoint #" + checkpointNum);
+        }
 
         #endregion
     }
