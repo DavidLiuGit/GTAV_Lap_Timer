@@ -71,6 +71,7 @@ namespace LapTimer
 		int activeSector;						// track the active sector number
 		int raceStartTime;
 		int sectorStartTime;
+		Weather weather;
 
 		#endregion
 
@@ -460,6 +461,10 @@ namespace LapTimer
 			// set the 2nd SectorCheckpoint as active (there must be at least 2 SectorCheckpoints to start race mode); draw the checkpoint
 			activateRaceCheckpoint(1);
 
+			// set weather to extra sunny; save current weather so it can be restored after exiting race mode
+			weather = World.Weather;
+			World.Weather = Weather.ExtraSunny;
+
 			// teleport player to the starting checkpoint; set player orientation
 			SectorCheckpoint start = markedSectorCheckpoints[0];
 			Game.Player.Character.CurrentVehicle.Position = start.position;
@@ -480,6 +485,11 @@ namespace LapTimer
 		{
 			hideMarker(markedSectorCheckpoints[activeSector]);
 			GTA.UI.Screen.ShowSubtitle("Lap Timer: Exiting Race Mode.");
+
+			// try to restore Weather, if possible
+			if (weather != null)
+				World.Weather = weather;
+
 			raceMode = false;
 		}
 
