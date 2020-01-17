@@ -247,12 +247,12 @@ namespace LapTimer
 				// compute time elapsed in this sector and since the race start
 				int currTime = Game.GameTime;
 				int sectorTime = currTime - sectorStartTime;
-				int raceTime = currTime - raceStartTime;
+				sectorStartTime = currTime;						// set sectorStartTime to the time we just got from the game
 
 				// save and display sector time
 				activeCheckpoint.lastSectorTime = sectorTime;
-				TimeType timeType = getTimeType(activeCheckpoint);
-				GTA.UI.Notification.Show("Sector " + activeSector + ": ~" + timeType + '~' + msToReadable(sectorTime));
+				TimeType tType = getTimeType(activeCheckpoint);
+				GTA.UI.Notification.Show("Sector " + activeSector + ": ~" + (char) tType + '~' + msToReadable(sectorTime));
 
 				// activate next checkpoint
 				activateRaceCheckpoint(activeSector + 1);
@@ -462,7 +462,6 @@ namespace LapTimer
 
 
 
-
 		/// <summary>
 		/// Activate the provided SectorCheckpoint after deactivating the current active checkpoint. 
 		/// By activating, a marker will be placed at the checkpoint, and timer will run until player is in range of the checkpoint.
@@ -471,21 +470,27 @@ namespace LapTimer
 		/// <returns>The now-active SectorCheckpoint</returns>
 		private SectorCheckpoint activateRaceCheckpoint(int idx)
 		{
-			// detect if index is out of range
-			if (idx >= markedSectorCheckpoints.Count)
+			// detect if index is out of expected range
+			if (idx >= markedSectorCheckpoints.Count || idx == 0)
 			{
-				// if index is out of bounds but the race is circular, reset idx
-				if (lapRace) {
-					idx = idx % markedSectorCheckpoints.Count;
-					GTA.UI.Notification.Show("Lap completed.");
-				}
+				// if index is too high but the race is circular, reset idx to 0
+				if (lapRace && idx != 0) 
+					idx = 0;
 
 				// otherwise, safely exit race mode and return
 				else
 				{
-					GTA.UI.Notification.Show("Race completed.");
-					exitRaceMode();
-					return activeCheckpoint;
+					// compute race/lap time
+					int raceTime = Game.GameTime - raceStartTime;
+					TimeType tType = TimeType.Record;
+
+					// if point-to-point race, then race is completed. Print time and exit race mode.
+					if (!lapRace)
+					{
+						GTA.UI.Notification.Show("Race completed: ~" + (char) tType + '~' + msToReadable(raceTime));
+						exitRaceMode();
+						return activeCheckpoint;
+					}
 				}
 			}
 
