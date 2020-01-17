@@ -22,6 +22,8 @@ namespace LapTimer
 		string Version = "1.0";
 		#endregion
 
+
+		#region main
 		public Main()
 		{
 			Tick += onTick;
@@ -46,9 +48,11 @@ namespace LapTimer
 			}
 
 		}
+		#endregion
 
 
 		// ------------- PROPERTIES/VARIABLES -----------------
+		#region properties
 		// flags
 		bool placementMode = false;
 		bool raceMode = false;
@@ -68,6 +72,7 @@ namespace LapTimer
 		int raceStartTime;
 		int sectorStartTime;
 
+		#endregion
 
 
 		// ------------- EVENT LISTENERS/HANDLERS -----------------
@@ -112,6 +117,18 @@ namespace LapTimer
 			else if (e.KeyCode == Keys.F6)
 			{
 				toggleRaceMode();
+			}
+
+			// if race mode is enabled, and the control key was used:
+			else if (raceMode && e.Modifiers == Keys.Control)
+			{
+				switch (e.KeyCode)
+				{
+					// Ctrl+R: restart race
+					case Keys.R:
+						enterRaceMode();
+						break;
+				}
 			}
 		}
 
@@ -241,18 +258,24 @@ namespace LapTimer
 			// get player's position and compute distance to the position of the active checkpoint
 			float dist = Game.Player.Character.Position.DistanceTo2D(activeCheckpoint.position);
 
+			// get data on the player's current vehicle
+			string vehName = Game.Player.Character.CurrentVehicle.DisplayName;
+
 			// check if it is within the specified maximum
 			if (dist < maxDistance)
 			{
-				// compute time elapsed in this sector and since the race start
-				int currTime = Game.GameTime;
-				int sectorTime = currTime - sectorStartTime;
-				sectorStartTime = currTime;						// set sectorStartTime to the time we just got from the game
+				// compute time elapsed since race start
+				int elapsedTime = Game.GameTime - raceStartTime;
 
-				// save and display sector time
-				activeCheckpoint.lastSectorTime = sectorTime;
-				TimeType tType = getTimeType(activeCheckpoint);
-				GTA.UI.Notification.Show("Sector " + activeSector + ": ~" + (char) tType + '~' + msToReadable(sectorTime));
+				// save and display elapsed
+				TimeType tType = activeCheckpoint.timing.updateTiming(elapsedTime, vehName);
+				TimingData t = activeCheckpoint.timing;
+				string notifString = string.Format("Checkpoint {0}: ~n~Elapsed: ~{1}~{2} ~n~~s~Fastest split: ~{3}~{4} ~n~~s~Vehicle split: ~{5}~{6}",
+					activeSector,
+					(char)tType, msToReadable(t.latestTime),
+					t.latestRecordSplitTime <= 0 ? 'g' : 'r', msToReadable(t.latestRecordSplitTime, true),
+					t.latestVehicleSplitTime <= 0 ? 'g' : 'r', msToReadable(t.latestVehicleSplitTime, true));
+				GTA.UI.Notification.Show(notifString);
 
 				// activate next checkpoint
 				activateRaceCheckpoint(activeSector + 1);
@@ -465,11 +488,15 @@ namespace LapTimer
 		/// <summary>
 		/// Activate the provided SectorCheckpoint after deactivating the current active checkpoint. 
 		/// By activating, a marker will be placed at the checkpoint, and timer will run until player is in range of the checkpoint.
+		/// If the index is out of bounds (>= no. of checkpoints), either end the race or reset the lap.
 		/// </summary>
 		/// <param name="idx">List index of SectorCheckpoint to activate in <c>markedSectorCheckpoints</c></param>
 		/// <returns>The now-active SectorCheckpoint</returns>
 		private SectorCheckpoint activateRaceCheckpoint(int idx)
 		{
+			// deactivate current active checkpoint's marker
+			hideMarker(markedSectorCheckpoints[activeSector]);
+
 			// detect if index is out of expected range
 			if (idx >= markedSectorCheckpoints.Count || idx == 0)
 			{
@@ -493,9 +520,6 @@ namespace LapTimer
 					}
 				}
 			}
-
-			// deactivate current active checkpoint's marker
-			hideMarker(markedSectorCheckpoints[activeSector]);
 
 			// set the new SectorCheckpoint as active (by index)
 			activeSector = idx;
@@ -538,49 +562,29 @@ namespace LapTimer
 
 
 		/// <summary>
-		/// Based on input, determine whether the specified sector/lap time is a record, vehicle best, or none of the above.
+		/// Convert a time in milliseconds to a readable format. Minutes will be omitted unless forced or >= 60000 ms.
 		/// </summary>
-		/// <param name="time">Specified time</param>
-		/// <param name="bestTime">Vehicle best time; should be <= recordTime</param>
-		/// <param name="recordTime">Fastest time in any vehicle.</param>
-		/// <returns><c>TimeType</c> enum</returns>
-		private TimeType getTimeType(int time, int bestTime, int recordTime)
-		{
-			if (time < recordTime) return TimeType.Record;
-			if (time < bestTime) return TimeType.VehicleBest;
-			return TimeType.Regular;
-		}
-
-		/// <summary>
-		/// Based on a SectorCheckpoint input, determine if <c>lastSectorTime</c> is a record, veh best, or none of the above. 
-		/// </summary>
-		/// <param name="chkpt">instance of <c>SectorCheckpoint</c>. <c>bestSectorTime & recordSectorTime</c> will be updated if logical.</param>
-		/// <returns><c>TimeType</c> enum</returns>
-		private TimeType getTimeType(SectorCheckpoint chkpt)
-		{
-			TimeType type = getTimeType(chkpt.lastSectorTime, chkpt.bestSectorTime, chkpt.recordSectorTime);
-
-			// modify SectorCheckpoint times 
-			if (type == TimeType.Record) chkpt.recordSectorTime = chkpt.bestSectorTime = chkpt.lastSectorTime;
-			else if (type == TimeType.VehicleBest) chkpt.bestSectorTime = chkpt.lastSectorTime;
-
-			return type;
-		}
-
-
-
-		/// <summary>
-		/// Convert an interger time value in milliseconds to a human-readable string.
-		/// </summary>
-		/// <param name="time"></param>
+		/// <param name="time">Time in milliseconds</param>
+		/// <param name="forceMinute">Force inclusion of minutes</param>
 		/// <returns></returns>
-		private string msToReadable(int time)
+		public string msToReadable (int time, bool forceSign = false, bool forceMinute = false) 
 		{
-			return TimeSpan.FromMilliseconds(time).ToString(@"mm\:ss\.fff");
+			// format milliseconds to seconds (and minutes, if necessary)
+			string ret;
+			if (forceMinute || time >= 60000)
+				ret = TimeSpan.FromMilliseconds(time).ToString(@"m\:s\.fff");
+			else ret = TimeSpan.FromMilliseconds(time).ToString(@"s\.fff");
+
+			// prepend sign +/- if necessary, depending on forceSign and time value
+			if (forceSign)
+				return time >= 0 ? '+' + ret : '-' + ret;
+			else
+				return time >= 0 ? ret : '-' + ret;
 		}
+	}
 
 		#endregion
-	}
+	
 
 
 	#region structs
@@ -597,6 +601,7 @@ namespace LapTimer
 		public int bestSectorTime =		int.MaxValue;
 		public int lastSectorTime;
 		public int timesCompleted = 0;
+		public TimingData timing = new TimingData();
 	}
 
 	class Marker
@@ -606,7 +611,7 @@ namespace LapTimer
 		public bool active = false;
 	}
 
-	enum MarkerType {
+	public enum MarkerType {
 		placement,
 		raceArrow,
 		raceFinish,
@@ -614,21 +619,104 @@ namespace LapTimer
 		raceAirFinish,
 	}
 
-	enum TimeType {
+	public enum TimeType {
 		Regular		= 'w',
 		VehicleBest	= 'g',		// best time achieved for the current vehicle
 		Record		= 'p',		// best time achieved
 	}
-	#endregion
 
+	public class TimingData
+	{
+		// records
+		public int fastestTime = -1;														// fastest time achieved in any vehicle
+		public Dictionary<string, int> vehicleFastestTime = new Dictionary<string, int>();	// track fastest time achieved in each vehicle model
+		public int timesCompleted = 0;
+
+		// latest
+		public int latestTime;
+		public string latestVehicle;
+		public int latestRecordSplitTime;
+		public int latestVehicleSplitTime;
+
+
+		/// <summary>
+		/// Update timing data. Split times will be computed based on the data.
+		/// </summary>
+		/// <param name="time">Time in milliseconds</param>
+		/// <param name="vehicleName">display name of vehicle</param>
+		/// <returns></returns>
+		public TimeType updateTiming(int time, string vehicleName)
+		{
+			// set latest time & vehicle
+			latestTime = time;
+			latestVehicle = vehicleName;
+
+			// determine the time type
+			TimeType tType = getLatestTimeType();
+
+			// compute split time
+			//latestRecordSplitTime = latestTime - fastestTime;
+			//latestVehicleSplitTime = latestTime - vehicleFastestTime[vehicleName];
+
+			return tType;
+		}
+
+
+
+		/// <summary>
+		/// Compute <c>TimeType</c> based on latest timing data, and update records as needed
+		/// </summary>
+		/// <returns><c>TimeType</c></returns>
+		private TimeType getLatestTimeType()
+		{
+			// check if fastest time; if so, update both fastestTime and vehicleFastestTime
+			if (latestTime < fastestTime)
+			{
+				// compute split times, set new fastest times, and return
+				setLatestSplitTimes();
+				fastestTime = latestTime;
+				vehicleFastestTime[latestVehicle] = latestTime;
+				return TimeType.Record;
+			}
+			else if (fastestTime == -1) fastestTime = latestTime;
+
+			// check if fastest vehicle time
+			if (vehicleFastestTime.ContainsKey(latestVehicle))
+			{
+				if (latestTime < vehicleFastestTime[latestVehicle])
+				{
+					// compute split times, set new fastest vehicle time, and return
+					setLatestSplitTimes();
+					vehicleFastestTime[latestVehicle] = latestTime;
+					return TimeType.VehicleBest;
+				}
+			}
+			else vehicleFastestTime[latestVehicle] = latestTime;
+
+			setLatestSplitTimes();
+			return TimeType.Regular;
+		}
+
+
+
+		private void setLatestSplitTimes() {
+			// compute & set record split time
+			latestRecordSplitTime = latestTime - fastestTime;
+
+			// compute & set vehicle split time, if possible
+			if (vehicleFastestTime.ContainsKey(latestVehicle))
+				latestVehicleSplitTime = latestTime - vehicleFastestTime[latestVehicle];
+			else latestVehicleSplitTime = 0;
+		}
+
+	}
+
+	#endregion
 }
 
 namespace LapTimer
 {
-	public class Class1
-	{
-		// Nothing goes here
-	}
+
 }
 // Useful Links
 // All Vehicles - https://pastebin.com/uTxZnhaN
