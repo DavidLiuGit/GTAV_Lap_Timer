@@ -163,7 +163,7 @@ namespace LapTimer
 			// if currently in race mode, try to leave race mode
 			if (raceMode)
 			{
-				// TODO: exitRaceMode()
+				exitRaceMode();
 				raceMode = false;
 				return false;
 			}
@@ -182,7 +182,7 @@ namespace LapTimer
 				if (canEnterRaceMode())
 				{
 					enterRaceMode();
-					//raceMode = true;
+					raceMode = true;
 				}
 				else
 					GTA.UI.Screen.ShowSubtitle("~r~Lap Timer: cannot enter Race Mode.");
@@ -219,9 +219,6 @@ namespace LapTimer
 
 			return newCheckpoint;
 		}
-
-
-
 
 		#endregion
 
@@ -283,6 +280,7 @@ namespace LapTimer
 				chkpt.marker.checkpoint.Delete();    // delete the checkpoint
 				chkpt.marker.blip.Delete();                // delete the blip
 			}
+			chkpt.marker.active = false;
 		}
 
 
@@ -300,8 +298,7 @@ namespace LapTimer
 			int checkpointNum = chkpt.number;
 
 			// delete its Marker (Blip + Checkpoint) from the World, if they are defined
-			if (chkpt.marker.blip != null) chkpt.marker.blip.Delete();
-			if (chkpt.marker.checkpoint != null) chkpt.marker.checkpoint.Delete();
+			hideMarker(chkpt);
 
 			// remove the checkpoint from the list
 			markedSectorCheckpoints.RemoveAt(markedSectorCheckpoints.Count - 1);
@@ -397,7 +394,6 @@ namespace LapTimer
 		private void enterRaceMode(bool verbose = true)
 		{
 			// set the 2nd SectorCheckpoint as active (there must be at least 2 SectorCheckpoints to start race mode); draw the checkpoint
-			//activeCheckpoint = markedSectorCheckpoints[1];
 			activateRaceCheckpoint(1);
 
 			// teleport player to the starting checkpoint; set player orientation
@@ -408,6 +404,16 @@ namespace LapTimer
 			if (verbose)
 				GTA.UI.Screen.ShowSubtitle("Lap Timer: Starting race...");
 		}
+
+		/// <summary>
+		/// Clean up any objects created while in race mode
+		/// </summary>
+		private void exitRaceMode(bool verbose = true)
+		{
+			hideMarker(markedSectorCheckpoints[activeSector]);
+			GTA.UI.Screen.ShowSubtitle("Lap Timer: Exiting Race Mode.");
+		}
+
 
 
 
@@ -420,7 +426,7 @@ namespace LapTimer
 		private SectorCheckpoint activateRaceCheckpoint(int idx)
 		{
 			// deactivate current active checkpoint's marker
-			//hideMarker(markedSectorCheckpoints[activeSector]);
+			hideMarker(markedSectorCheckpoints[activeSector]);
 
 			// set the new SectorCheckpoint as active (by index)
 			activeSector = idx;
@@ -429,13 +435,13 @@ namespace LapTimer
 
 			// the marker placed should be different, depending on whether this checkpoint is final
 			if (isFinal)
-				placeMarker(activeCheckpoint.position, MarkerType.raceFinish, idx);
+				activeCheckpoint.marker = placeMarker(activeCheckpoint.position, MarkerType.raceFinish, idx);
 
 			// if not final checkpoint, place a checkpoint w/ an arrow pointing to the next checkpoint
 			else
 			{
 				Vector3 nextChkptPosition = markedSectorCheckpoints[idx + 1].position;
-				placeMarker(activeCheckpoint.position, MarkerType.raceArrow, idx, checkpointRadius, nextChkptPosition);
+				activeCheckpoint.marker = placeMarker(activeCheckpoint.position, MarkerType.raceArrow, idx, checkpointRadius, nextChkptPosition);
 			}
 
 			return markedSectorCheckpoints[idx];
@@ -480,11 +486,11 @@ namespace LapTimer
 		public int timesCompleted = 0;
 	}
 
-	struct Marker
+	class Marker
 	{
 		public Blip blip;
 		public Checkpoint checkpoint;
-		public bool active;
+		public bool active = false;
 	}
 
 	enum MarkerType {
