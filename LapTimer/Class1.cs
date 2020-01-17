@@ -37,9 +37,14 @@ namespace LapTimer
 				GTA.UI.Screen.ShowSubtitle(ModName + " " + Version + " by " + Developer + " Loaded");
 				firstTime = false;
 			}
-			// If the user has used the current mod version before, the text (and code) above will not appear
 
-			// ------------- ANY CODE PLACED ABOVE THIS LINE WILL HAPPEN WITH EVERY TICK (1 MS) OF THE SCRIPT -----------------
+
+			// race mode checkpoint detection
+			if (raceMode)
+			{
+				activeCheckpointDetection();
+			}
+
 		}
 
 
@@ -51,6 +56,7 @@ namespace LapTimer
 
 		// constants
 		const float checkpointRadius = 8.0f;    // radius in meters of a checkpoint
+		const float checkpointMargin = 1.0f;	// checkpoint's margin multiplier; a checkpoint should be considered reached if player position is within radius * margin from the center of the checkpoint
 		Vector3 checkpointOffset = new Vector3(0.0f, 0.0f, -1.0f);	// modify the standard checkpoint's position by this offset when drawing; cosmetic only!
 
 		// placement mode variables
@@ -218,6 +224,29 @@ namespace LapTimer
 				GTA.UI.Screen.ShowSubtitle("Lap Timer: placed checkpoint #" + checkpointNum);
 
 			return newCheckpoint;
+		}
+
+
+
+		/// <summary>
+		/// Race mode only: detect whether the player is within <c>maxDistance</c> of the active checkpoint. Activate next checkpoint and return sector time, if within range.
+		/// </summary>
+		/// <param name="maxDistance">Maximum distance in meters to trigger checkpoint.</param>
+		/// <param name="force3D">Distance computation defaults to 2D (x-y plane only) unless this flag is true</param>
+		/// <returns></returns>
+		private int activeCheckpointDetection(float maxDistance = checkpointRadius*checkpointMargin, bool force3D = false)
+		{
+			// get player's position and compute distance to the position of the active checkpoint
+			float dist = Game.Player.Character.Position.DistanceTo2D(activeCheckpoint.position);
+
+			// check if it is within the specified maximum
+			if (dist < maxDistance)
+			{
+				GTA.UI.Notification.Show("Sector " + activeSector + " completed.");
+				activateRaceCheckpoint(activeSector + 1);
+			}
+
+			return 0;
 		}
 
 		#endregion
@@ -425,13 +454,26 @@ namespace LapTimer
 		/// <returns>The now-active SectorCheckpoint</returns>
 		private SectorCheckpoint activateRaceCheckpoint(int idx)
 		{
+			// detect if index is out of range
+			if (idx >= markedSectorCheckpoints.Count)
+			{
+				if (lapRace) idx = idx % markedSectorCheckpoints.Count;		// if index is out of bounds but the race is circular, reset idx
+
+				// otherwise, safely exit race mode and return
+				else
+				{
+					exitRaceMode();
+					return activeCheckpoint;
+				}
+			}
+
 			// deactivate current active checkpoint's marker
 			hideMarker(markedSectorCheckpoints[activeSector]);
 
 			// set the new SectorCheckpoint as active (by index)
 			activeSector = idx;
 			activeCheckpoint = markedSectorCheckpoints[idx];
-			bool isFinal = idx == markedSectorCheckpoints.Count;			// determine if this is the final checkpoint based on the index
+			bool isFinal = idx == markedSectorCheckpoints.Count - 1;			// determine if this is the final checkpoint based on the index
 
 			// the marker placed should be different, depending on whether this checkpoint is final
 			if (isFinal)
