@@ -495,8 +495,9 @@ namespace LapTimer
 		private SectorCheckpoint activateRaceCheckpoint(int idx)
 		{
 			// deactivate current active checkpoint's marker
-			hideMarker(markedSectorCheckpoints[activeSector]);
-
+			try { hideMarker(markedSectorCheckpoints[activeSector]); }
+			catch { }
+			
 			// detect if index is out of expected range
 			if (idx >= markedSectorCheckpoints.Count || idx == 0)
 			{
