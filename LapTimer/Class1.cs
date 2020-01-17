@@ -63,8 +63,10 @@ namespace LapTimer
 		List<SectorCheckpoint> markedSectorCheckpoints = new List<SectorCheckpoint>();     // add to this list when player marks a position; to be used like a stack (i.e. can only delete/pop latest element!)
 
 		// race mode variables
-		SectorCheckpoint activeCheckpoint;
+		SectorCheckpoint activeCheckpoint;		// track the active sector checkpoint
 		int activeSector;						// track the active sector number
+		int raceStartTime;
+		int sectorStartTime;
 
 
 
@@ -242,7 +244,17 @@ namespace LapTimer
 			// check if it is within the specified maximum
 			if (dist < maxDistance)
 			{
-				GTA.UI.Notification.Show("Sector " + activeSector + " completed.");
+				// compute time elapsed in this sector and since the race start
+				int currTime = Game.GameTime;
+				int sectorTime = currTime - sectorStartTime;
+				int raceTime = currTime - raceStartTime;
+
+				// save and display sector time
+				activeCheckpoint.lastSectorTime = sectorTime;
+				TimeType timeType = getTimeType(activeCheckpoint);
+				GTA.UI.Notification.Show("Sector " + activeSector + ": ~" + timeType + '~' + msToReadable(sectorTime));
+
+				// activate next checkpoint
 				activateRaceCheckpoint(activeSector + 1);
 			}
 
@@ -430,6 +442,10 @@ namespace LapTimer
 			Game.Player.Character.CurrentVehicle.Position = start.position;
 			Game.Player.Character.CurrentVehicle.Quaternion = start.quarternion;
 
+			// start the clock by getting the current GameTime
+			raceStartTime = Game.GameTime;
+			sectorStartTime = raceStartTime;
+
 			if (verbose)
 				GTA.UI.Screen.ShowSubtitle("Lap Timer: Starting race...");
 		}
@@ -441,6 +457,7 @@ namespace LapTimer
 		{
 			hideMarker(markedSectorCheckpoints[activeSector]);
 			GTA.UI.Screen.ShowSubtitle("Lap Timer: Exiting Race Mode.");
+			raceMode = false;
 		}
 
 
@@ -457,11 +474,16 @@ namespace LapTimer
 			// detect if index is out of range
 			if (idx >= markedSectorCheckpoints.Count)
 			{
-				if (lapRace) idx = idx % markedSectorCheckpoints.Count;		// if index is out of bounds but the race is circular, reset idx
+				// if index is out of bounds but the race is circular, reset idx
+				if (lapRace) {
+					idx = idx % markedSectorCheckpoints.Count;
+					GTA.UI.Notification.Show("Lap completed.");
+				}
 
 				// otherwise, safely exit race mode and return
 				else
 				{
+					GTA.UI.Notification.Show("Race completed.");
 					exitRaceMode();
 					return activeCheckpoint;
 				}
@@ -508,6 +530,50 @@ namespace LapTimer
 			return true;
 		}
 
+
+
+		/// <summary>
+		/// Based on input, determine whether the specified sector/lap time is a record, vehicle best, or none of the above.
+		/// </summary>
+		/// <param name="time">Specified time</param>
+		/// <param name="bestTime">Vehicle best time; should be <= recordTime</param>
+		/// <param name="recordTime">Fastest time in any vehicle.</param>
+		/// <returns><c>TimeType</c> enum</returns>
+		private TimeType getTimeType(int time, int bestTime, int recordTime)
+		{
+			if (time < recordTime) return TimeType.Record;
+			if (time < bestTime) return TimeType.VehicleBest;
+			return TimeType.Regular;
+		}
+
+		/// <summary>
+		/// Based on a SectorCheckpoint input, determine if <c>lastSectorTime</c> is a record, veh best, or none of the above. 
+		/// </summary>
+		/// <param name="chkpt">instance of <c>SectorCheckpoint</c>. <c>bestSectorTime & recordSectorTime</c> will be updated if logical.</param>
+		/// <returns><c>TimeType</c> enum</returns>
+		private TimeType getTimeType(SectorCheckpoint chkpt)
+		{
+			TimeType type = getTimeType(chkpt.lastSectorTime, chkpt.bestSectorTime, chkpt.recordSectorTime);
+
+			// modify SectorCheckpoint times 
+			if (type == TimeType.Record) chkpt.recordSectorTime = chkpt.bestSectorTime = chkpt.lastSectorTime;
+			else if (type == TimeType.VehicleBest) chkpt.bestSectorTime = chkpt.lastSectorTime;
+
+			return type;
+		}
+
+
+
+		/// <summary>
+		/// Convert an interger time value in milliseconds to a human-readable string.
+		/// </summary>
+		/// <param name="time"></param>
+		/// <returns></returns>
+		private string msToReadable(int time)
+		{
+			return TimeSpan.FromMilliseconds(time).ToString(@"mm\:ss\.fff");
+		}
+
 		#endregion
 	}
 
@@ -541,6 +607,12 @@ namespace LapTimer
 		raceFinish,
 		raceAirArrow,
 		raceAirFinish,
+	}
+
+	enum TimeType {
+		Regular		= 'w',
+		VehicleBest	= 'g',		// best time achieved for the current vehicle
+		Record		= 'p',		// best time achieved
 	}
 	#endregion
 
