@@ -7,9 +7,11 @@ using System.Drawing;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Collections.Specialized;
 using GTA;
 using GTA.Native;
 using GTA.Math;
+
 
 namespace LapTimer
 {
@@ -59,6 +61,7 @@ namespace LapTimer
 		bool lapRace = false;                   // if true, the 1st SectorCheckpoint will be used as the end of a lap
 
 		// constants
+		IniFile settings = new IniFile("./scripts/LapTimer.ini");
 		const float checkpointRadius = 8.0f;    // radius in meters of a checkpoint
 		const float checkpointMargin = 1.0f;	// checkpoint's margin multiplier; a checkpoint should be considered reached if player position is within radius * margin from the center of the checkpoint
 		Vector3 checkpointOffset = new Vector3(0.0f, 0.0f, -1.0f);	// modify the standard checkpoint's position by this offset when drawing; cosmetic only!
@@ -84,6 +87,7 @@ namespace LapTimer
 			if (e.KeyCode == Keys.F5)
 			{
 				togglePlacementMode();
+				GTA.UI.Notification.Show("Lap Timer: keys " + settings.Read("activate", "Placement"));
 			}
 
 			// if placement mode is enabled, and the control key was used:
