@@ -107,10 +107,10 @@ namespace LapTimer
 						break;
 
 					// Ctrl+L: toggle Lap Race mode
-					case Keys.L:
+					/*case Keys.L:
 						lapRace = !lapRace;
 						GTA.UI.Screen.ShowSubtitle("Lap Timer: lap race flag: " + lapRace);
-						break;
+						break;*/
 				}
 			}
 
@@ -514,22 +514,14 @@ namespace LapTimer
 			catch { }
 			
 			// detect if index is out of expected range
-			if (idx >= markedSectorCheckpoints.Count || idx == 0)
+			if (idx >= markedSectorCheckpoints.Count)
 			{
-				// if index is too high but the race is circular, reset idx to 0
-				if (lapRace && idx != 0) 
-					idx = 0;
-
-				// otherwise, safely exit race mode and return
-				else
+				// if point-to-point race, then race is completed. Print time and exit race mode.
+				if (!lapRace)
 				{
-					// if point-to-point race, then race is completed. Print time and exit race mode.
-					if (!lapRace)
-					{
-						GTA.UI.Screen.ShowSubtitle("Race completed. ~n~" + activeCheckpoint.timing.getLatestTimingSummaryString(), 5000);
-						exitRaceMode();
-						return activeCheckpoint;
-					}
+					GTA.UI.Screen.ShowSubtitle("Race completed. ~n~" + activeCheckpoint.timing.getLatestTimingSummaryString(), 10000);
+					exitRaceMode();
+					return activeCheckpoint;
 				}
 			}
 
