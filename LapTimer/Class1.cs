@@ -41,7 +41,7 @@ namespace LapTimer
 				GTA.UI.Screen.ShowSubtitle(ModName + " " + Version + " by " + Developer + " Loaded");
 				firstTime = false;
 
-				readHotkeySettings();
+				readSettings();
 			}
 
 
@@ -81,6 +81,7 @@ namespace LapTimer
 
 		// race mode variables
 		SectorCheckpoint activeCheckpoint;		// track the active sector checkpoint
+		int freezeTime = 500;
 		int activeSector;						// track the active sector number
 		int raceStartTime;
 		int sectorStartTime;
@@ -95,10 +96,7 @@ namespace LapTimer
 		{
 			// enter/exit placement mode with F5
 			if (e.KeyCode == placementActivateKey)
-			{
 				togglePlacementMode();
-				GTA.UI.Notification.Show("Lap Timer: keys " + settings.Read("activate", "Placement"));
-			}
 
 			// if placement mode is enabled, and the control key was used:
 			else if (placementMode && e.Modifiers == Keys.Control)
@@ -457,7 +455,7 @@ namespace LapTimer
 		/// <summary>
 		/// Setup race mode by disabling traffic, clearing weather, and teleporting player to the 1st SectorCheckpoint.
 		/// </summary>
-		private void enterRaceMode(bool verbose = true)
+		private void enterRaceMode()
 		{
 			// set the 2nd SectorCheckpoint as active (there must be at least 2 SectorCheckpoints to start race mode); draw the checkpoint
 			activateRaceCheckpoint(1);
@@ -471,12 +469,16 @@ namespace LapTimer
 			Game.Player.Character.CurrentVehicle.Position = start.position;
 			Game.Player.Character.CurrentVehicle.Quaternion = start.quarternion;
 
+			// freeze time
+			Game.Player.CanControlCharacter = false;
+			GTA.UI.Screen.ShowSubtitle("~y~Lap Timer: Ready...");
+			Script.Wait(freezeTime);
+			Game.Player.CanControlCharacter = true;
+			GTA.UI.Screen.ShowSubtitle("~g~Lap Timer: Go!");
+
 			// start the clock by getting the current GameTime
 			raceStartTime = Game.GameTime;
 			sectorStartTime = raceStartTime;
-
-			if (verbose)
-				GTA.UI.Screen.ShowSubtitle("Lap Timer: Starting race...");
 		}
 
 		/// <summary>
@@ -587,7 +589,7 @@ namespace LapTimer
 		/// <summary>
 		/// Read in INI key settings. Includes default settings if INI read fails.
 		/// </summary>
-		private void readHotkeySettings()
+		private void readSettings()
 		{
 			// read & parse placement mode hotkeys
 			placementActivateKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("activate", "Placement") ?? "F5");
@@ -598,6 +600,16 @@ namespace LapTimer
 			// read race mode hotkeys
 			raceActivateKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("activate", "Race") ?? "F6");
 			restartRaceKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("restartRace", "Race") ?? "R");
+
+			// read race mode settings
+			try
+			{
+				freezeTime = Int32.Parse(settings.Read("freezeTime", "Race"));
+			}
+			catch (FormatException fe)
+			{
+				GTA.UI.Notification.Show("~r~Lap Timer: invalid freeze time setting. Using default setting.");
+			}
 		}
 		#endregion
 	}
