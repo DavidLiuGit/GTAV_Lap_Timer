@@ -40,6 +40,8 @@ namespace LapTimer
 			{
 				GTA.UI.Screen.ShowSubtitle(ModName + " " + Version + " by " + Developer + " Loaded");
 				firstTime = false;
+
+				readHotkeySettings();
 			}
 
 
@@ -59,6 +61,14 @@ namespace LapTimer
 		bool placementMode = false;
 		bool raceMode = false;
 		bool lapRace = false;                   // if true, the 1st SectorCheckpoint will be used as the end of a lap
+
+		// hotkeys
+		Keys placementActivateKey;
+		Keys addCheckpointKey;
+		Keys undoCheckpointKey;
+		Keys clearCheckpointsKey;
+		Keys raceActivateKey;
+		Keys restartRaceKey;
 
 		// constants
 		IniFile settings = new IniFile("./scripts/LapTimer.ini");
@@ -84,7 +94,7 @@ namespace LapTimer
 		private void onKeyDown(object sender, KeyEventArgs e)
 		{
 			// enter/exit placement mode with F5
-			if (e.KeyCode == Keys.F5)
+			if (e.KeyCode == placementActivateKey)
 			{
 				togglePlacementMode();
 				GTA.UI.Notification.Show("Lap Timer: keys " + settings.Read("activate", "Placement"));
@@ -93,47 +103,29 @@ namespace LapTimer
 			// if placement mode is enabled, and the control key was used:
 			else if (placementMode && e.Modifiers == Keys.Control)
 			{
-				switch (e.KeyCode)
-				{
-					// Ctrl+X: add a checkpoint
-					case Keys.X:
-						markedSectorCheckpoints.Add(createSectorCheckpoint());
-						break;
+				// Ctrl+X: add a checkpoint
+				if (e.KeyCode == addCheckpointKey)
+					markedSectorCheckpoints.Add(createSectorCheckpoint());
 
-					// Ctrl+Z: delete (undo) last SectorCheckpoint
-					case Keys.Z:
-						deleteLastSectorCheckpoint();
-						break;
+				// Ctrl+Z: delete (undo) last SectorCheckpoint
+				else if (e.KeyCode == undoCheckpointKey)
+					deleteLastSectorCheckpoint();
 
-					// Ctrl+D: clear all SectorCheckpoints, and delete any blips & checkpoints from World
-					case Keys.D:
-						clearAllSectorCheckpoints();
-						break;
-
-					// Ctrl+L: toggle Lap Race mode
-					/*case Keys.L:
-						lapRace = !lapRace;
-						GTA.UI.Screen.ShowSubtitle("Lap Timer: lap race flag: " + lapRace);
-						break;*/
-				}
+				// Ctrl+D: clear all SectorCheckpoints, and delete any blips & checkpoints from World
+				else if (e.KeyCode == clearCheckpointsKey)
+					clearAllSectorCheckpoints();
 			}
 
 			// enter/exit race mode with F6
-			else if (e.KeyCode == Keys.F6)
-			{
+			else if (e.KeyCode == raceActivateKey)
 				toggleRaceMode();
-			}
 
 			// if race mode is enabled, and the control key was used:
 			else if (raceMode && e.Modifiers == Keys.Control)
 			{
-				switch (e.KeyCode)
-				{
-					// Ctrl+R: restart race
-					case Keys.R:
-						enterRaceMode();
-						break;
-				}
+				// Ctrl+R: restart race
+				if (e.KeyCode == restartRaceKey)
+					enterRaceMode();
 			}
 		}
 
@@ -589,9 +581,27 @@ namespace LapTimer
 			else
 				return time >= 0 ? ret : '-' + ret;
 		}
+
+
+
+		/// <summary>
+		/// Read in INI key settings. Includes default settings if INI read fails.
+		/// </summary>
+		private void readHotkeySettings()
+		{
+			// read & parse placement mode hotkeys
+			placementActivateKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("activate", "Placement") ?? "F5");
+			addCheckpointKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("addCheckpoint", "Placement") ?? "X");
+			undoCheckpointKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("undoCheckpoint", "Placement") ?? "Z");
+			clearCheckpointsKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("clearCheckpoints", "Placement") ?? "D");
+
+			// read race mode hotkeys
+			raceActivateKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("activate", "Race") ?? "F6");
+			restartRaceKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("restartRace", "Race") ?? "R");
+		}
+		#endregion
 	}
 
-		#endregion
 	
 
 
