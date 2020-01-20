@@ -4,9 +4,9 @@ Also referred to as Lap Timer. This is a ScriptHookVDotNet script for GTA5.
 Test your car's performance any way you want with Race Timer. Set your own checkpoints (in Placement Mode), and take any car through the race you created.
 
 As you drive, Race Timer shows you at each checkpoint:
-**Elapsed time**
-**Fastest split time**: delta between your current time and the best time previously achieved in any vehicle
-**Vehicle split time**: delta between your current time and best time previously achieved in the same vehicle
+- **Elapsed time**
+- **Fastest split time**: delta between your current time and the best time previously achieved in any vehicle
+- **Vehicle split time**: delta between your current time and best time previously achieved in the same vehicle
 
 
 
