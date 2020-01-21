@@ -63,12 +63,8 @@ namespace LapTimer
 		bool lapRace = false;                   // if true, the 1st SectorCheckpoint will be used as the end of a lap
 
 		// hotkeys
-		Keys placementActivateKey;
-		Keys addCheckpointKey;
-		Keys undoCheckpointKey;
-		Keys clearCheckpointsKey;
-		Keys raceActivateKey;
-		Keys restartRaceKey;
+		Keys placementActivateKey, addCheckpointKey, undoCheckpointKey, clearCheckpointsKey, exportRaceKey;
+		Keys raceActivateKey, restartRaceKey;
 
 		// constants
 		IniFile settings = new IniFile("./scripts/LapTimer.ini");
@@ -113,8 +109,8 @@ namespace LapTimer
 				else if (e.KeyCode == clearCheckpointsKey)
 					clearAllSectorCheckpoints();
 
-				else if (e.KeyCode == Keys.L)
-					RaceExporter.writeToJson(RaceExporter.createExportableRace("test", markedSectorCheckpoints, lapRace), "test");
+				else if (e.KeyCode == exportRaceKey)
+					exportRace();
 			}
 
 			// enter/exit race mode with F6
@@ -556,7 +552,7 @@ namespace LapTimer
 			// there must be 2 or more checkpoints in the list
 			if (chkpts.Count < 2)
 			{
-				GTA.UI.Notification.Show("~r~Lap Timer: You must place at 2 checkpoints in Placement Mode before entering Race Mode.");
+				GTA.UI.Notification.Show("~r~Lap Timer: Invalid route. You must place at 2 checkpoints in Placement Mode.");
 				return false;
 			}
 
@@ -599,6 +595,7 @@ namespace LapTimer
 			addCheckpointKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("addCheckpoint", "Placement") ?? "X");
 			undoCheckpointKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("undoCheckpoint", "Placement") ?? "Z");
 			clearCheckpointsKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("clearCheckpoints", "Placement") ?? "D");
+			exportRaceKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("exportRace", "Placement") ?? "L");
 
 			// read race mode hotkeys
 			raceActivateKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("activate", "Race") ?? "F6");
@@ -609,10 +606,34 @@ namespace LapTimer
 			{
 				freezeTime = Int32.Parse(settings.Read("freezeTime", "Race"));
 			}
-			catch (FormatException fe)
+			catch (FormatException)
 			{
 				GTA.UI.Notification.Show("~r~Lap Timer: invalid freeze time setting. Using default setting.");
 			}
+		}
+
+
+
+		/// <summary>
+		/// Export the current race to JSON.
+		/// </summary>
+		private void exportRace()
+		{
+			// validate checkpoints to make sure the race is valid
+			if (!validateCheckpoints(markedSectorCheckpoints))
+			{
+				GTA.UI.Notification.Show("~r~Lap Timer: cannot export race because validation failed.");
+				return;
+			}
+
+			// prompt user to enter a name for the race
+			string name = GTA.Game.GetUserInput("custom_race");
+	
+			// export the race using RaceExporter
+			string fileName = RaceExporter.writeToJson(RaceExporter.createExportableRace(name, markedSectorCheckpoints, lapRace), name);
+
+			// inform user of the exported file
+			GTA.UI.Notification.Show("Lap Timer: exported race as " + fileName);
 		}
 		#endregion
 	}

@@ -16,23 +16,14 @@ namespace LapTimer
 	{
 		static string rootPath = "./scripts/LapTimer/";
 		static string jsonExt = ".json";
-
+		
 		/// <summary>
-		/// Serialize a List of <c>SectorCheckpoint</c> and write it to an XML file with the specified prefix
+		/// Create an instance of <c>ExportableRace</c> with data provided.
 		/// </summary>
-		/// <param name="obj">SectorCheckpoints to serialize</param>
-		/// <param name="name">Name of file to write out to</param>
-		public static void writeXML(object obj, string name){
-			// create output file
-			System.IO.FileStream file = System.IO.File.Create(rootPath + name + ".xml");
-			
-			// create XML writer and write to FileStream
-			System.Xml.Serialization.XmlSerializer writer = new System.Xml.Serialization.XmlSerializer(obj.GetType());
-			writer.Serialize(file, obj);
-			file.Close();
-		}
-
-
+		/// <param name="name">Name of race</param>
+		/// <param name="chkpts">List of SectorCheckpoints</param>
+		/// <param name="lapMode">Whether the race should run in lap mode</param>
+		/// <returns></returns>
 		public static ExportableRace createExportableRace (string name, List<SectorCheckpoint> chkpts, bool lapMode){
 			// create new instance of ExportableRace & set metadata
 			ExportableRace race = new ExportableRace();
@@ -54,7 +45,14 @@ namespace LapTimer
 		}
 
 
-		public static void writeToJson(object obj, string fileName)
+
+		/// <summary>
+		/// Serialize and write given object to JSON.
+		/// </summary>
+		/// <param name="obj">Object to serialize</param>
+		/// <param name="fileName">Name of file (without extension)</param>
+		/// <returns></returns>
+		public static string writeToJson(object obj, string fileName)
 		{
 			// create output filestream
 			System.IO.FileStream file = System.IO.File.Create(rootPath + fileName + jsonExt);
@@ -63,7 +61,10 @@ namespace LapTimer
 			var serializer = new DataContractJsonSerializer(obj.GetType());
 			serializer.WriteObject(file, obj);
 
+			// close file stream & return file name
 			file.Close();
+
+			return fileName + jsonExt;
 		}
 
 	}
