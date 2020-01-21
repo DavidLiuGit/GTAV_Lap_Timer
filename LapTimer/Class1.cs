@@ -112,6 +112,9 @@ namespace LapTimer
 				// Ctrl+D: clear all SectorCheckpoints, and delete any blips & checkpoints from World
 				else if (e.KeyCode == clearCheckpointsKey)
 					clearAllSectorCheckpoints();
+
+				else if (e.KeyCode == Keys.L)
+					RaceExporter.writeToJson(RaceExporter.createExportableRace("test", markedSectorCheckpoints, lapRace), "test");
 			}
 
 			// enter/exit race mode with F6
@@ -618,7 +621,7 @@ namespace LapTimer
 
 
 	#region structs
-	class SectorCheckpoint
+	public class SectorCheckpoint
 	{
 		// placement data
 		public Vector3 position;			// Entity.Position
@@ -630,7 +633,7 @@ namespace LapTimer
 		public TimingData timing = new TimingData();
 	}
 
-	class Marker
+	public class Marker
 	{
 		public Blip blip;
 		public Checkpoint checkpoint;
