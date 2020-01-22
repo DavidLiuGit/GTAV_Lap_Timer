@@ -596,20 +596,24 @@ namespace LapTimer
 			// prompt user to enter the name of the file (with or without the file extension) to import from
 			string name = GTA.Game.GetUserInput("custom_race");
 
-			// attempt to import from file
-			ExportableRace race = RaceExporter.deserializeFromJson(name);
-
-			// repopulate List<SectorCheckpoint> using the imported race data
-			lapRace = race.lapMode;
-			for (int i = 0; i < race.checkpoints.Length; i++)
+			try
 			{
-				SimplifiedCheckpoint sc = race.checkpoints[i];
-				SectorCheckpoint chkpt = new SectorCheckpoint(sc.number, sc.position, sc.quarternion, false);
-				markedSectorCheckpoints.Add(chkpt);
-			}
+				// attempt to import from file
+				ExportableRace race = RaceExporter.deserializeFromJson(name);
 
-			// inform user of successful load
-			GTA.UI.Screen.ShowSubtitle("Lap Timer: successfully imported race!");
+				// repopulate List<SectorCheckpoint> using the imported race data
+				lapRace = race.lapMode;
+				for (int i = 0; i < race.checkpoints.Length; i++)
+				{
+					SimplifiedCheckpoint sc = race.checkpoints[i];
+					SectorCheckpoint chkpt = new SectorCheckpoint(sc.number, sc.position, sc.quarternion, false);
+					markedSectorCheckpoints.Add(chkpt);
+				}
+
+				// inform user of successful load
+				GTA.UI.Screen.ShowSubtitle("Lap Timer: successfully imported race!");
+			}
+			catch { }
 		}
 
 		#endregion

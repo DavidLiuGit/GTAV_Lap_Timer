@@ -86,7 +86,7 @@ namespace LapTimer
 				return (ExportableRace) deserializer.ReadObject(file);
 			}
 			catch {
-				// TODO: implement better error handling here
+				GTA.UI.Screen.ShowSubtitle("~r~Lap Timer: failed to load race - file not found.");
 				throw;
 			}
 		}
