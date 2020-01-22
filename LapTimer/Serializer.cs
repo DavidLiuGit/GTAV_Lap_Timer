@@ -15,7 +15,7 @@ namespace LapTimer
 	class RaceExporter
 	{
 		static string rootPath = "./scripts/LapTimer/";
-		static string jsonExt = ".json";
+		static string fileExt = ".json";
 		
 		/// <summary>
 		/// Create an instance of <c>ExportableRace</c> with data provided.
@@ -38,6 +38,7 @@ namespace LapTimer
 				SimplifiedCheckpoint sc = new SimplifiedCheckpoint();
 				sc.position = chkpts[i].position;
 				sc.quarternion = chkpts[i].quarternion;
+				sc.number = chkpts[i].number;
 				race.checkpoints[i] = sc;
 			}
 
@@ -52,10 +53,11 @@ namespace LapTimer
 		/// <param name="obj">Object to serialize</param>
 		/// <param name="fileName">Name of file (without extension)</param>
 		/// <returns></returns>
-		public static string writeToJson(object obj, string fileName)
+		public static string serializeToJson(ExportableRace obj, string fileName)
 		{
 			// create output filestream
-			System.IO.FileStream file = System.IO.File.Create(rootPath + fileName + jsonExt);
+				if (!fileName.EndsWith(fileExt)) fileName += fileExt;			// append file extension, if it is not there already
+			System.IO.FileStream file = System.IO.File.Create(rootPath + fileName);
 
 			// instantiate JSON serializer
 			var serializer = new DataContractJsonSerializer(obj.GetType());
@@ -64,10 +66,34 @@ namespace LapTimer
 			// close file stream & return file name
 			file.Close();
 
-			return fileName + jsonExt;
+			return fileName + fileExt;
 		}
+		
 
+		/// <summary>
+		/// Deserialize <c>ExportableRace</c> from a JSON file
+		/// </summary>
+		/// <param name="fileName">name of JSON file to read from</param>
+		/// <returns></returns>
+		public static ExportableRace deserializeFromJson (string fileName)
+		{
+			try {
+				// attempt to open the file for reading
+				if (!fileName.EndsWith(fileExt)) fileName += fileExt;			// append file extension, if it is not there already
+				System.IO.FileStream file = System.IO.File.OpenRead(rootPath + fileName);
+				
+				// instantiate JSON deserializer
+				var deserializer = new DataContractJsonSerializer(typeof(ExportableRace));
+				return (ExportableRace) deserializer.ReadObject(file);
+			}
+			catch {
+				// TODO: implement better error handling here
+				throw;
+			}
+		}
 	}
+
+
 
 	public struct ExportableRace
 	{
@@ -83,5 +109,6 @@ namespace LapTimer
 	{
 		public Vector3 position;
 		public Quaternion quarternion;
+		public int number;
 	}
 }
