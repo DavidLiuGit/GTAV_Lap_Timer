@@ -63,12 +63,11 @@ namespace LapTimer
 		bool lapRace = false;                   // if true, the 1st SectorCheckpoint will be used as the end of a lap
 
 		// hotkeys
-		Keys placementActivateKey, addCheckpointKey, undoCheckpointKey, clearCheckpointsKey, exportRaceKey;
+		Keys placementActivateKey, addCheckpointKey, undoCheckpointKey, clearCheckpointsKey, exportRaceKey, importRaceKey;
 		Keys raceActivateKey, restartRaceKey;
 
 		// constants
 		IniFile settings = new IniFile("./scripts/LapTimer.ini");
-		const float checkpointRadius = 8.0f;    // radius in meters of a checkpoint
 		const float checkpointMargin = 1.0f;	// checkpoint's margin multiplier; a checkpoint should be considered reached if player position is within radius * margin from the center of the checkpoint
 		Vector3 checkpointOffset = new Vector3(0.0f, 0.0f, -1.0f);	// modify the standard checkpoint's position by this offset when drawing; cosmetic only!
 
@@ -109,8 +108,13 @@ namespace LapTimer
 				else if (e.KeyCode == clearCheckpointsKey)
 					clearAllSectorCheckpoints();
 
+				// export current race to JSON file
 				else if (e.KeyCode == exportRaceKey)
 					exportRace();
+
+				// import a race from a JSON file
+				else if (e.KeyCode == importRaceKey)
+					importRace();
 			}
 
 			// enter/exit race mode with F6
@@ -220,22 +224,22 @@ namespace LapTimer
 		private SectorCheckpoint createSectorCheckpoint(bool verbose = true)
 		{
 			// instantiate empty SectorCheckpoint
-			SectorCheckpoint newCheckpoint = new SectorCheckpoint();
+			int checkpointNum = markedSectorCheckpoints.Count;
+			SectorCheckpoint newCheckpoint = new SectorCheckpoint(checkpointNum);
 
-			// determine current player position; decrease pos.Z by 1 meter such that the checkpoint is on the ground
-			newCheckpoint.position = Game.Player.Character.Position;
-			newCheckpoint.quarternion = Game.Player.Character.Quaternion;
+			// determine current player position
+			// newCheckpoint.position = Game.Player.Character.Position;
+			// newCheckpoint.quarternion = Game.Player.Character.Quaternion;
 
 			// assign SectorCheckpoint number, based on length of markedSectorCheckpoints list.
-			int checkpointNum = markedSectorCheckpoints.Count;
-			newCheckpoint.number = checkpointNum;
+			// newCheckpoint.number = checkpointNum;
 
 			// place marker (blip + checkpoint)
-			newCheckpoint.marker = placeMarker(newCheckpoint.position, MarkerType.placement, checkpointNum);
+			//newCheckpoint.marker = placeMarker(newCheckpoint.position, MarkerType.placement, checkpointNum);
 
 			// print output if verbose
-			if (verbose)
-				GTA.UI.Screen.ShowSubtitle("Lap Timer: placed checkpoint #" + checkpointNum);
+			//if (verbose)
+			//	GTA.UI.Screen.ShowSubtitle("Lap Timer: placed checkpoint #" + checkpointNum);
 
 			return newCheckpoint;
 		}
@@ -248,7 +252,7 @@ namespace LapTimer
 		/// <param name="maxDistance">Maximum distance in meters to trigger checkpoint.</param>
 		/// <param name="force3D">Distance computation defaults to 2D (x-y plane only) unless this flag is true</param>
 		/// <returns></returns>
-		private int activeCheckpointDetection(float maxDistance = checkpointRadius*checkpointMargin, bool force3D = false)
+		private int activeCheckpointDetection(float margin = checkpointMargin, bool force3D = false)
 		{
 			// get player's position and compute distance to the position of the active checkpoint
 			float dist = Game.Player.Character.Position.DistanceTo2D(activeCheckpoint.position);
@@ -258,8 +262,8 @@ namespace LapTimer
 				// get data on the player's current vehicle
 				string vehName = Game.Player.Character.CurrentVehicle.DisplayName;
 
-				// check if it is within the specified maximum
-				if (dist < maxDistance)
+				// check if it is within the specified maximum (margin * checkpointRadius)
+				if (dist < margin * SectorCheckpoint.checkpointRadius)
 				{
 					// compute time elapsed since race start
 					int elapsedTime = Game.GameTime - raceStartTime;
@@ -288,64 +292,6 @@ namespace LapTimer
 
 		// ------------- HELPER METHODS -----------------
 		#region helpers
-		
-		/// <summary>
-		/// Place a marker (pair of blip and checkpoint) at the specified position.
-		/// </summary>
-		/// <param name="pos">Position as instance of Vector3</param>
-		/// <param name="type">Indicate whether checkpoint is to be used in a race or in placement mode</param>
-		/// <param name="number">Placement mode only: the number to display on the checkpoint</param>
-		/// <param name="radius">Radius of the checkpoint</param>
-		/// <param name="target">Race mode only: position of the next checkpoint, if applicable. Omit or pass in <c>null</c> if not applicable</param>
-		private Marker placeMarker(Vector3 pos, MarkerType type, int number = 0, float radius = checkpointRadius, Vector3? target = null)
-		{
-			// instantiate empty Marker
-			Marker marker = new Marker();
-
-			// place a placement mode checkpoint
-			if (type == MarkerType.placement)
-			{
-				marker.checkpoint = GTA.World.CreateCheckpoint (
-									new GTA.CheckpointCustomIcon(CheckpointCustomIconStyle.Number, Convert.ToByte(number)),
-									pos+checkpointOffset, pos+checkpointOffset, 
-									radius, Color.FromArgb(255, 255, 66));
-			}
-
-			// place a regular race checkpoint
-			else if (type == MarkerType.raceArrow || type == MarkerType.raceFinish)
-			{
-				if (type == MarkerType.raceArrow)
-					marker.checkpoint = GTA.World.CreateCheckpoint(CheckpointIcon.CylinderDoubleArrow,
-						pos + checkpointOffset, checkpointOffset + target ?? new Vector3(0, 0, 0), radius, Color.FromArgb(255, 255, 66));
-				else if (type == MarkerType.raceFinish)
-					marker.checkpoint = GTA.World.CreateCheckpoint(CheckpointIcon.CylinderCheckerboard,
-						pos + checkpointOffset, pos + checkpointOffset, radius, Color.FromArgb(255, 255, 66));
-			}
-
-			// create blip
-			marker.blip = GTA.World.CreateBlip(pos);
-			marker.blip.NumberLabel = number;
-
-			marker.active = true;
-			return marker;
-		}
-
-
-
-		/// <summary>
-		/// Clear active markers of a given SectorCheckpoint instance.
-		/// </summary>
-		/// <param name="chkpt">Instance of <c>SectorCheckpoint</c></param>
-		private void hideMarker(SectorCheckpoint chkpt)
-		{
-			if (chkpt.marker.active)
-			{
-				chkpt.marker.checkpoint.Delete();    // delete the checkpoint
-				chkpt.marker.blip.Delete();                // delete the blip
-			}
-			chkpt.marker.active = false;
-		}
-
 
 		/// <summary>
 		/// Delete the last <c>SectorCheckpoint</c>. First delete its <c>Marker</c>, then remove the checkpoint from <c>markedSectorCheckpoints</c>.
@@ -361,7 +307,7 @@ namespace LapTimer
 			int checkpointNum = chkpt.number;
 
 			// delete its Marker (Blip + Checkpoint) from the World, if they are defined
-			hideMarker(chkpt);
+			chkpt.hideMarker();
 
 			// remove the checkpoint from the list
 			markedSectorCheckpoints.RemoveAt(markedSectorCheckpoints.Count - 1);
@@ -394,7 +340,7 @@ namespace LapTimer
 		private void hideAllSectorCheckpoints()
 		{
 			for (int i = 0; i < markedSectorCheckpoints.Count; i++)
-				hideMarker(markedSectorCheckpoints[i]);
+				markedSectorCheckpoints[i].hideMarker();
 		}
 
 		/// <summary>
@@ -406,7 +352,7 @@ namespace LapTimer
 			{
 				// copy the instance of SectorCheckpoint and replace marker with a new instance returned by placeMarker
 				SectorCheckpoint newCheckpoint = markedSectorCheckpoints[i];
-				newCheckpoint.marker = placeMarker(markedSectorCheckpoints[i].position, MarkerType.placement, markedSectorCheckpoints[i].number);
+				newCheckpoint.marker = newCheckpoint.placeMarker(MarkerType.placement, markedSectorCheckpoints[i].number);
 				markedSectorCheckpoints[i] = newCheckpoint;                         // assign new instance of SectorCheckpoint to the original index in the List
 			}
 		}
@@ -485,7 +431,7 @@ namespace LapTimer
 		/// </summary>
 		private void exitRaceMode(bool verbose = true)
 		{
-			hideMarker(markedSectorCheckpoints[activeSector]);
+			markedSectorCheckpoints[activeSector].hideMarker();
 			// GTA.UI.Screen.ShowSubtitle("Lap Timer: Exiting Race Mode.");
 
 			// try to restore Weather, if possible
@@ -507,7 +453,7 @@ namespace LapTimer
 		private SectorCheckpoint activateRaceCheckpoint(int idx)
 		{
 			// deactivate current active checkpoint's marker
-			try { hideMarker(markedSectorCheckpoints[activeSector]); }
+			try { markedSectorCheckpoints[activeSector].hideMarker(); }
 			catch { }
 			
 			// detect if index is out of expected range
@@ -529,13 +475,13 @@ namespace LapTimer
 
 			// the marker placed should be different, depending on whether this checkpoint is final
 			if (isFinal)
-				activeCheckpoint.marker = placeMarker(activeCheckpoint.position, MarkerType.raceFinish, idx);
+				activeCheckpoint.marker = activeCheckpoint.placeMarker(MarkerType.raceFinish, idx);
 
 			// if not final checkpoint, place a checkpoint w/ an arrow pointing to the next checkpoint
 			else
 			{
 				Vector3 nextChkptPosition = markedSectorCheckpoints[idx + 1].position;
-				activeCheckpoint.marker = placeMarker(activeCheckpoint.position, MarkerType.raceArrow, idx, checkpointRadius, nextChkptPosition);
+				activeCheckpoint.marker = activeCheckpoint.placeMarker(MarkerType.raceArrow, idx, nextChkptPosition);
 			}
 
 			return markedSectorCheckpoints[idx];
@@ -573,7 +519,7 @@ namespace LapTimer
 			// format milliseconds to seconds (and minutes, if necessary)
 			string ret;
 			if (forceMinute || time >= 60000)
-				ret = TimeSpan.FromMilliseconds(time).ToString(@"m\:s\.fff");
+				ret = TimeSpan.FromMilliseconds(time).ToString(@"m\:ss\.fff");
 			else ret = TimeSpan.FromMilliseconds(time).ToString(@"s\.fff");
 
 			// prepend sign +/- if necessary, depending on forceSign and time value
@@ -595,7 +541,8 @@ namespace LapTimer
 			addCheckpointKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("addCheckpoint", "Placement") ?? "X");
 			undoCheckpointKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("undoCheckpoint", "Placement") ?? "Z");
 			clearCheckpointsKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("clearCheckpoints", "Placement") ?? "D");
-			exportRaceKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("exportRace", "Placement") ?? "L");
+			exportRaceKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("exportRace", "Placement") ?? "O");
+			importRaceKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("importRaceKey", "Placement") ?? "I");
 
 			// read race mode hotkeys
 			raceActivateKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("activate", "Race") ?? "F6");
@@ -615,7 +562,7 @@ namespace LapTimer
 
 
 		/// <summary>
-		/// Export the current race to JSON.
+		/// Export the current race to JSON. User will be prompted to enter a name.
 		/// </summary>
 		private void exportRace()
 		{
@@ -630,11 +577,41 @@ namespace LapTimer
 			string name = GTA.Game.GetUserInput("custom_race");
 	
 			// export the race using RaceExporter
-			string fileName = RaceExporter.writeToJson(RaceExporter.createExportableRace(name, markedSectorCheckpoints, lapRace), name);
+			string fileName = RaceExporter.serializeToJson(RaceExporter.createExportableRace(name, markedSectorCheckpoints, lapRace), name);
 
 			// inform user of the exported file
 			GTA.UI.Notification.Show("Lap Timer: exported race as " + fileName);
 		}
+
+
+
+		/// <summary>
+		/// Import a race from a file on disk. The currently placed checkpoints will be overwritten.
+		/// </summary>
+		private void importRace()
+		{
+			// clean up any existing race/checkpoints
+			clearAllSectorCheckpoints();
+
+			// prompt user to enter the name of the file (with or without the file extension) to import from
+			string name = GTA.Game.GetUserInput("custom_race");
+
+			// attempt to import from file
+			ExportableRace race = RaceExporter.deserializeFromJson(name);
+
+			// repopulate List<SectorCheckpoint> using the imported race data
+			lapRace = race.lapMode;
+			for (int i = 0; i < race.checkpoints.Length; i++)
+			{
+				SimplifiedCheckpoint sc = race.checkpoints[i];
+				SectorCheckpoint chkpt = new SectorCheckpoint(sc.number, sc.position, sc.quarternion, false);
+				markedSectorCheckpoints.Add(chkpt);
+			}
+
+			// inform user of successful load
+			GTA.UI.Screen.ShowSubtitle("Lap Timer: successfully imported race!");
+		}
+
 		#endregion
 	}
 
@@ -642,32 +619,6 @@ namespace LapTimer
 
 
 	#region structs
-	public class SectorCheckpoint
-	{
-		// placement data
-		public Vector3 position;			// Entity.Position
-		public Quaternion quarternion;		// Entity.Quarternion
-		public Marker marker;
-		public int number;
-
-		// race data - all times are tracked as milliseconds
-		public TimingData timing = new TimingData();
-	}
-
-	public class Marker
-	{
-		public Blip blip;
-		public Checkpoint checkpoint;
-		public bool active = false;
-	}
-
-	public enum MarkerType {
-		placement,
-		raceArrow,
-		raceFinish,
-		raceAirArrow,
-		raceAirFinish,
-	}
 
 	public enum TimeType {
 		Regular		= 'w',
@@ -778,10 +729,6 @@ namespace LapTimer
 	#endregion
 }
 
-namespace LapTimer
-{
-
-}
 // Useful Links
 // All Vehicles - https://pastebin.com/uTxZnhaN
 // All Player Models - https://pastebin.com/i5c1zA0W

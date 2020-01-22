@@ -56,7 +56,7 @@ namespace LapTimer
 		public static string serializeToJson(ExportableRace obj, string fileName)
 		{
 			// create output filestream
-				if (!fileName.EndsWith(fileExt)) fileName += fileExt;			// append file extension, if it is not there already
+			if (!fileName.EndsWith(fileExt)) fileName += fileExt;			// append file extension, if it is not there already
 			System.IO.FileStream file = System.IO.File.Create(rootPath + fileName);
 
 			// instantiate JSON serializer
@@ -65,8 +65,7 @@ namespace LapTimer
 
 			// close file stream & return file name
 			file.Close();
-
-			return fileName + fileExt;
+			return fileName;
 		}
 		
 
