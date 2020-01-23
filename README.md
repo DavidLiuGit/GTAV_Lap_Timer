@@ -11,7 +11,7 @@ As you drive, Race Timer shows you at each checkpoint:
 
 
 ## Installation
-Place LapTimer.dll in your `scripts` folder.
+Extract everything to `scripts` folder.
 Latest ScriptHookVDotNet is required. Make sure you have `ScriptHookVDotNet3.dll` in your game's main directory.
 
 
@@ -21,7 +21,9 @@ Latest ScriptHookVDotNet is required. Make sure you have `ScriptHookVDotNet3.dll
 In this mode, you will create your custom race by placing checkpoints. Enter "Placement Mode" with F5.
 - Ctrl+X: place new checkpoint
 - Ctrl+Z: undo last checkpoint
-- Ctrl+D: delete all checkpoints 
+- Ctrl+D: delete all checkpoints
+- Ctrl+I: import race from file. 6 preset races are packaged
+- Ctrl+O: export race to file
 
 ### Race Mode
 Once you've placed at least 2 checkpoints, get in a vehicle and press F6. You will be teleported to the first checkpoint, and the timer will start. Times will be displayed at each checkpoint and at the end of the race.
@@ -35,6 +37,9 @@ Once you've placed at least 2 checkpoints, get in a vehicle and press F6. You wi
 
 
 ## Change Log
+### v1.2
+- implemented freeze time when starting a race. 750ms by default
+- implemented import/export of race in placement mode. 6 preset races are included 
 ### v1.1
 - added support for INI, allowing custom hotkeys 
 ### v1.0
