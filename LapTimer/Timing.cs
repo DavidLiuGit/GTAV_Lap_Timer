@@ -54,9 +54,9 @@ namespace LapTimer
 		public string getLatestTimingSummaryString()
 		{
 			return string.Format("Elapsed: ~{0}~{1} ~n~~s~Fastest split: ~{2}~{3} ~n~~s~Vehicle split: ~{4}~{5}",
-				(char)latestTimeType, Main.msToReadable(latestTime),
-				latestRecordSplitTime <= 0 ? 'g' : 'r', Main.msToReadable(latestRecordSplitTime, true),
-				latestVehicleSplitTime <= 0 ? 'g' : 'r', Main.msToReadable(latestVehicleSplitTime, true));
+				(char)latestTimeType, TimingData.msToReadable(latestTime),
+				latestRecordSplitTime <= 0 ? 'g' : 'r', TimingData.msToReadable(latestRecordSplitTime, true),
+				latestVehicleSplitTime <= 0 ? 'g' : 'r', TimingData.msToReadable(latestVehicleSplitTime, true));
 		}
 
 
@@ -109,6 +109,29 @@ namespace LapTimer
 			if (vehicleFastestTime.ContainsKey(latestVehicle))
 				latestVehicleSplitTime = latestTime - vehicleFastestTime[latestVehicle];
 			else latestVehicleSplitTime = 0;
+		}
+
+
+
+		/// <summary>
+		/// Convert a time in milliseconds to a readable format. Minutes will be omitted unless forced or >= 60000 ms.
+		/// </summary>
+		/// <param name="time">Time in milliseconds</param>
+		/// <param name="forceMinute">Force inclusion of minutes</param>
+		/// <returns></returns>
+		public static string msToReadable(int time, bool forceSign = false, bool forceMinute = false)
+		{
+			// format milliseconds to seconds (and minutes, if necessary)
+			string ret;
+			if (forceMinute || time >= 60000)
+				ret = TimeSpan.FromMilliseconds(time).ToString(@"m\:ss\.fff");
+			else ret = TimeSpan.FromMilliseconds(time).ToString(@"s\.fff");
+
+			// prepend sign +/- if necessary, depending on forceSign and time value
+			if (forceSign)
+				return time >= 0 ? '+' + ret : '-' + ret;
+			else
+				return time >= 0 ? ret : '-' + ret;
 		}
 	}
 }

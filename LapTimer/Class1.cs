@@ -15,7 +15,7 @@ using GTA.Math;
 
 namespace LapTimer
 {
-	public class Main : Script
+	public class RaceTimerMain : Script
 	{
 		#region metadata
 		bool firstTime = true;
@@ -26,9 +26,10 @@ namespace LapTimer
 
 
 		#region main
-		public Main()
+		public RaceTimerMain()
 		{
 			Tick += onTick;
+			Tick += (o, e) => menu._menuPool.ProcessMenus();
 			KeyDown += onKeyDown;
 			Interval = 1;
 			Aborted += OnShutdown;
@@ -41,7 +42,9 @@ namespace LapTimer
 				GTA.UI.Screen.ShowSubtitle(ModName + " " + Version + " by " + Developer + " Loaded");
 				firstTime = false;
 
+				// setup tasks
 				readSettings();
+				menu = new NativeUIMenu(ref markedSectorCheckpoints);
 			}
 
 
@@ -63,6 +66,7 @@ namespace LapTimer
 		bool lapRace = false;                   // if true, the 1st SectorCheckpoint will be used as the end of a lap
 
 		// hotkeys
+		Keys menuKey;
 		Keys placementActivateKey, addCheckpointKey, undoCheckpointKey, clearCheckpointsKey, exportRaceKey, importRaceKey;
 		Keys raceActivateKey, restartRaceKey;
 
@@ -70,6 +74,7 @@ namespace LapTimer
 		IniFile settings = new IniFile("./scripts/LapTimer.ini");
 		const float checkpointMargin = 1.0f;	// checkpoint's margin multiplier; a checkpoint should be considered reached if player position is within radius * margin from the center of the checkpoint
 		Vector3 checkpointOffset = new Vector3(0.0f, 0.0f, -1.0f);	// modify the standard checkpoint's position by this offset when drawing; cosmetic only!
+		NativeUIMenu menu;
 
 		// placement mode variables
 		List<SectorCheckpoint> markedSectorCheckpoints = new List<SectorCheckpoint>();     // add to this list when player marks a position; to be used like a stack (i.e. can only delete/pop latest element!)
@@ -128,6 +133,10 @@ namespace LapTimer
 				if (e.KeyCode == restartRaceKey)
 					enterRaceMode();
 			}
+
+			// open menu
+			else if (e.Modifiers == Keys.Control && e.KeyCode == menuKey)
+				menu.mainMenu.Visible = true;
 		}
 
 
@@ -505,30 +514,7 @@ namespace LapTimer
 			// if all criteria passed, checkpoints are valid
 			return true;
 		}
-
-
-
-		/// <summary>
-		/// Convert a time in milliseconds to a readable format. Minutes will be omitted unless forced or >= 60000 ms.
-		/// </summary>
-		/// <param name="time">Time in milliseconds</param>
-		/// <param name="forceMinute">Force inclusion of minutes</param>
-		/// <returns></returns>
-		public static string msToReadable (int time, bool forceSign = false, bool forceMinute = false) 
-		{
-			// format milliseconds to seconds (and minutes, if necessary)
-			string ret;
-			if (forceMinute || time >= 60000)
-				ret = TimeSpan.FromMilliseconds(time).ToString(@"m\:ss\.fff");
-			else ret = TimeSpan.FromMilliseconds(time).ToString(@"s\.fff");
-
-			// prepend sign +/- if necessary, depending on forceSign and time value
-			if (forceSign)
-				return time >= 0 ? '+' + ret : '-' + ret;
-			else
-				return time >= 0 ? ret : '-' + ret;
-		}
-
+		
 
 
 		/// <summary>
@@ -547,6 +533,9 @@ namespace LapTimer
 			// read race mode hotkeys
 			raceActivateKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("activate", "Race") ?? "F6");
 			restartRaceKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("restartRace", "Race") ?? "R");
+
+			// read Script hotkeys
+			menuKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("menu", "Script") ?? "N");
 
 			// read race mode settings
 			try
