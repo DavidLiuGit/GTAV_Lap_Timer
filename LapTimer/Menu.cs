@@ -9,14 +9,14 @@ namespace LapTimer
 {
 	class NativeUIMenu
 	{
-		List<SectorCheckpoint> sc;
+		RaceControl race;
 
 		public MenuPool _menuPool;
 		public UIMenu mainMenu;
 
-		public NativeUIMenu(ref List<SectorCheckpoint> checkpoints)
+		public NativeUIMenu(ref RaceControl raceControl)
 		{
-			sc = checkpoints;
+			race = raceControl;
 
 			// create new menu pool & add the main menu to it
 			_menuPool = new MenuPool();
@@ -31,7 +31,6 @@ namespace LapTimer
 			mainMenu.RefreshIndex();
 			return mainMenu;
 		}
-
 
 	}
 }
