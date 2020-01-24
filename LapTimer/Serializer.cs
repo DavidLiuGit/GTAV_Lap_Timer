@@ -14,8 +14,9 @@ namespace LapTimer
 {
 	class RaceExporter
 	{
-		static string rootPath = "./scripts/LapTimer/";
-		static string fileExt = ".json";
+		const string rootPath = "./scripts/LapTimer/";
+		const string fileExt = ".json";
+		const string scriptVersion = "v2.0";
 		
 		/// <summary>
 		/// Create an instance of <c>ExportableRace</c> with data provided.
@@ -69,17 +70,19 @@ namespace LapTimer
 		}
 		
 
+
 		/// <summary>
 		/// Deserialize <c>ExportableRace</c> from a JSON file
 		/// </summary>
 		/// <param name="fileName">name of JSON file to read from</param>
 		/// <returns></returns>
-		public static ExportableRace deserializeFromJson (string fileName)
+		public static ExportableRace deserializeFromJson (string fileName, bool exactPath = false)
 		{
 			try {
 				// attempt to open the file for reading
 				if (!fileName.EndsWith(fileExt)) fileName += fileExt;			// append file extension, if it is not there already
-				System.IO.FileStream file = System.IO.File.OpenRead(rootPath + fileName);
+				string filePath = exactPath ? fileName : rootPath + fileName;	// if exactPath is false, then prepend rootPath
+				System.IO.FileStream file = System.IO.File.OpenRead(filePath);
 				
 				// instantiate JSON deserializer
 				var deserializer = new DataContractJsonSerializer(typeof(ExportableRace));
@@ -90,12 +93,57 @@ namespace LapTimer
 				throw;
 			}
 		}
+
+		
+
+
+		/// <summary>
+		/// Get a List of <c>ImportableRace</c> from the default script output directory.
+		/// </summary>
+		/// <returns>List of <c>ImportableRace</c></returns>
+		public static List<ImportableRace> getImportableRaces()
+		{
+			// get all .json files in the script directory
+			string[] files = Directory.GetFiles(rootPath, "*.json");
+
+			// instantiate list of importable races
+			List<ImportableRace> races = new List<ImportableRace>();
+
+			// attempt to deserialize each file to ImportableRace
+			foreach (string fileName in files)
+			{
+				try
+				{
+					// attempt to deserialize to ImportableRace
+					System.IO.FileStream fs = System.IO.File.OpenRead(fileName);
+					DataContractJsonSerializer deserializer = new DataContractJsonSerializer(typeof(ImportableRace));
+					ImportableRace race = (ImportableRace)deserializer.ReadObject(fs);
+
+					// validate the ImportableRace instance; add to races if valid
+					race.filePath = fileName;
+					races.Add(race);
+				}
+				catch { throw; }
+
+			}
+
+			return races;
+		}
 	}
 
 
 
+	public struct ImportableRace
+	{
+		public string version;
+		public string name;
+		public string filePath;
+	}
+
+
 	public struct ExportableRace
 	{
+		public string version;	// script version that the race was exported from/intended for
 		public string name;		// name of the race
 		public bool lapMode;
 		public int numCheckpoints;

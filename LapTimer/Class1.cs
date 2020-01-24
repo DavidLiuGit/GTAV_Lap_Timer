@@ -81,8 +81,12 @@ namespace LapTimer
 		#region eventHandlers
 		private void onKeyDown(object sender, KeyEventArgs e)
 		{
+			// open menu
+			if (e.Modifiers == Keys.Control && e.KeyCode == menuKey)
+				menu.toggleMenu();
+
 			// enter/exit placement mode with F5
-			if (e.KeyCode == placementActivateKey)
+			else if (e.KeyCode == placementActivateKey)
 				race.togglePlacementMode();
 
 			// if placement mode is enabled, and the control key was used:
@@ -120,10 +124,6 @@ namespace LapTimer
 				if (e.KeyCode == restartRaceKey)
 					race.enterRaceMode();
 			}
-
-			// open menu
-			else if (e.Modifiers == Keys.Control && e.KeyCode == menuKey)
-				menu.mainMenu.Visible = true;
 		}
 
 

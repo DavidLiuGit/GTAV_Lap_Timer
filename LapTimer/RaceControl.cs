@@ -40,7 +40,7 @@ namespace LapTimer
 
 		/// <summary>
 		/// Enter/exit "placement mode", which allows user to mark positions as checkpoints in a lap. Can only be entered if raceMode=false
-		/// </summary>
+		/// </summary>e
 		public void togglePlacementMode()
 		{
 			if (raceMode)
@@ -416,18 +416,22 @@ namespace LapTimer
 		/// <summary>
 		/// Import a race from a file on disk. The currently placed checkpoints will be overwritten.
 		/// </summary>
-		public void importRace()
+		public void importRace(string path = null)
 		{
 			// clean up any existing race/checkpoints
 			clearAllSectorCheckpoints();
 
+			// set placement mode active; make sure player is not in race mode (exit if need to)
+			if (raceMode) exitRaceMode();
+			placementMode = true;
+
 			// prompt user to enter the name of the file (with or without the file extension) to import from
-			string name = GTA.Game.GetUserInput("custom_race");
+			string name = path == null ? GTA.Game.GetUserInput("custom_race") : path;
 
 			try
 			{
 				// attempt to import from file
-				ExportableRace race = RaceExporter.deserializeFromJson(name);
+				ExportableRace race = RaceExporter.deserializeFromJson(name, path == null ? false : true);
 
 				// repopulate List<SectorCheckpoint> using the imported race data
 				lapRace = race.lapMode;
