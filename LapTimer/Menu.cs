@@ -79,7 +79,7 @@ namespace LapTimer
 			
 			// iterate over each race & add to menu, along with their handlers
 			foreach (ImportableRace r in races){
-				UIMenuItem item = new UIMenuItem(r.name, r.version ?? "");
+				UIMenuItem item = new UIMenuItem(r.name, r.version ?? "v1.x");
 				item.Activated += (menu, sender) =>
 				{
 					race.importRace(r.filePath);

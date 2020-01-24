@@ -31,6 +31,7 @@ namespace LapTimer
 			race.name = name;
 			race.lapMode = lapMode;
 			race.numCheckpoints = chkpts.Count;
+			race.version = scriptVersion;
 
 			// iterate over list of SectorCheckpoints and simplify each before adding to ExportableRace
 			race.checkpoints = new SimplifiedCheckpoint[chkpts.Count];
