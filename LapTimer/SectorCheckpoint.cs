@@ -9,6 +9,9 @@ namespace LapTimer
 {
 	public class SectorCheckpoint
 	{
+		// defaults
+		private Color defaultColor = Color.FromArgb(255, 255, 66);
+
 		// placement data
 		public Vector3 position;			// Entity.Position
 		public Quaternion quarternion;		// Entity.Quarternion
@@ -67,7 +70,7 @@ namespace LapTimer
 				newMarker.checkpoint = GTA.World.CreateCheckpoint(
 									new GTA.CheckpointCustomIcon(CheckpointCustomIconStyle.Number, Convert.ToByte(number)),
 									position + checkpointOffset, position + checkpointOffset,
-									radius, Color.FromArgb(255, 255, 66));
+									radius, defaultColor);
 			}
 
 			// place a regular race checkpoint
@@ -75,10 +78,10 @@ namespace LapTimer
 			{
 				if (type == MarkerType.raceArrow)
 					newMarker.checkpoint = GTA.World.CreateCheckpoint(CheckpointIcon.CylinderDoubleArrow,
-						position + checkpointOffset, checkpointOffset + target ?? new Vector3(0, 0, 0), radius, Color.FromArgb(255, 255, 66));
+						position + checkpointOffset, checkpointOffset + target ?? new Vector3(0, 0, 0), radius, defaultColor);
 				else if (type == MarkerType.raceFinish)
 					newMarker.checkpoint = GTA.World.CreateCheckpoint(CheckpointIcon.CylinderCheckerboard,
-						position + checkpointOffset, position + checkpointOffset, radius, Color.FromArgb(255, 255, 66));
+						position + checkpointOffset, position + checkpointOffset, radius, defaultColor);
 			}
 
 			// create blip
