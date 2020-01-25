@@ -17,6 +17,7 @@ Latest ScriptHookVDotNet is required. Make sure you have `ScriptHookVDotNet3.dll
 
 
 ## Usage
+Ctrl+N: show menu
 ### Placement Mode
 In this mode, you will create your custom race by placing checkpoints. Enter "Placement Mode" with F5.
 - Ctrl+X: place new checkpoint
@@ -37,6 +38,9 @@ Once you've placed at least 2 checkpoints, get in a vehicle and press F6. You wi
 
 
 ## Change Log
+### v2.0
+- Implemented NativeUI menu
+- able to choose races to import from a list in the menu
 ### v1.2
 - implemented freeze time when starting a race. 750ms by default
 - implemented import/export of race in placement mode. 6 preset races are included 
