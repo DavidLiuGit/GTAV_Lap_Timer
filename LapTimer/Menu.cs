@@ -59,12 +59,17 @@ namespace LapTimer
 			buildRaceImportMenu(raceImportMenu);
 
 			// add controls to enter placement & race modes
-			var placementToggle = new UIMenuItem("Toggle Placement Mode");
-			var raceToggle = new UIMenuItem("Toggle Race Mode");
+			UIMenuItem placementToggle = new UIMenuItem("Toggle Placement Mode");
+			UIMenuItem raceToggle = new UIMenuItem("Toggle Race Mode");
 			placementToggle.Activated += (menu, sender) => race.togglePlacementMode();
 			raceToggle.Activated += (menu, sender) => race.toggleRaceMode();
 			mainMenu.AddItem(placementToggle);
 			mainMenu.AddItem(raceToggle);
+
+			// add control to export race
+			UIMenuItem exportRaceItem = new UIMenuItem("Export Race");
+			exportRaceItem.Activated += (menu, sender) => race.exportRace();
+			mainMenu.AddItem(exportRaceItem);
 
 			mainMenu.RefreshIndex();
 			return mainMenu;
@@ -92,5 +97,10 @@ namespace LapTimer
 		}
 
 		#endregion
+
 	}
+
+
+
+
 }
