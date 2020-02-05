@@ -9,6 +9,8 @@ using GTA.Math;
 
 using System.IO;
 using System.Runtime.Serialization.Json;
+using System.Security.Cryptography;
+
 
 namespace LapTimer
 {
@@ -138,17 +140,21 @@ namespace LapTimer
 	{
 		public string version;
 		public string name;
+		public string description;
+
 		public string filePath;
 	}
 
 
 	public struct ExportableRace
 	{
+		// metadata
 		public string version;	// script version that the race was exported from/intended for
 		public string name;		// name of the race
+		public string description;
+
 		public bool lapMode;
 		public int numCheckpoints;
-
 		public SimplifiedCheckpoint[] checkpoints;
 	}
 
@@ -158,5 +164,13 @@ namespace LapTimer
 		public Vector3 position;
 		public Quaternion quarternion;
 		public int number;
+	}
+
+
+	public struct ExportableCheckpointTimingSheet
+	{
+		public int fastestTime;
+		public Dictionary<string, int> vehicleFastestTime;
+		public int checkpointHashcode;
 	}
 }

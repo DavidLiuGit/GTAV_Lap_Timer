@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Security.Cryptography;
 
 using GTA;
 using GTA.Native;
@@ -360,7 +361,7 @@ namespace LapTimer
 				activeCheckpoint.marker = activeCheckpoint.placeMarker(MarkerType.raceArrow, idx, nextChkptPosition);
 			}
 
-			return markedSectorCheckpoints[idx];
+			return activeCheckpoint;
 		}
 
 
