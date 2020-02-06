@@ -124,6 +124,30 @@ namespace LapTimer
 		{
 			return _checkpointHashcode;
 		}
+
+
+
+		public SimplifiedCheckpointTimingData getSimplifiedTimingData()
+		{
+			return new SimplifiedCheckpointTimingData()
+			{
+				fastestTime = timing.fastestTime,
+				vehicleFastestTime = timing.vehicleFastestTime,
+				checkpointHashcode = _checkpointHashcode
+			};
+		}
+
+
+
+		public bool setTimingDataFromSimplified(SimplifiedCheckpointTimingData timingData)
+		{
+			if (timingData.checkpointHashcode != GetHashCode())
+				return false;
+
+			timing.fastestTime = timingData.fastestTime;
+			timing.vehicleFastestTime = timingData.vehicleFastestTime;
+			return true;
+		}
 		#endregion
 
 

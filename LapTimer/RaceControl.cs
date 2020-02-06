@@ -41,7 +41,7 @@ namespace LapTimer
 
 		/// <summary>
 		/// Enter/exit "placement mode", which allows user to mark positions as checkpoints in a lap. Can only be entered if raceMode=false
-		/// </summary>e
+		/// </summary>ef
 		public void togglePlacementMode()
 		{
 			if (raceMode)
@@ -242,11 +242,9 @@ namespace LapTimer
 		public void exitRaceMode(bool verbose = true)
 		{
 			markedSectorCheckpoints[activeSector].hideMarker();
-			// GTA.UI.Screen.ShowSubtitle("Lap Timer: Exiting Race Mode.");
 
 			// try to restore Weather, if possible
-			if (weather != null)
-				World.Weather = weather;
+			World.Weather = weather;
 
 			raceMode = false;
 		}
@@ -339,8 +337,7 @@ namespace LapTimer
 				// if point-to-point race, then race is completed. Print time and exit race mode.
 				if (!lapRace)
 				{
-					GTA.UI.Screen.ShowSubtitle("Race completed. ~n~" + activeCheckpoint.timing.getLatestTimingSummaryString(), 10000);
-					exitRaceMode();
+					raceFinishedHandler(activeCheckpoint);
 					return activeCheckpoint;
 				}
 			}
@@ -384,6 +381,19 @@ namespace LapTimer
 			return true;
 		}
 
+
+
+		private void raceFinishedHandler(SectorCheckpoint finalChkpt)
+		{
+			// display on screen a summary of the race results
+			GTA.UI.Screen.ShowSubtitle("Race completed. ~n~" + activeCheckpoint.timing.getLatestTimingSummaryString(), 10000);
+
+			// export timing sheet
+			exportTimingSheet();
+
+			// clean up
+			exitRaceMode();
+		}
 		#endregion
 
 
@@ -420,10 +430,10 @@ namespace LapTimer
 		public void importRace(string path = null)
 		{
 			// clean up any existing race/checkpoints
+			if (raceMode) exitRaceMode();
 			clearAllSectorCheckpoints();
 
 			// set placement mode active; make sure player is not in race mode (exit if need to)
-			if (raceMode) exitRaceMode();
 			placementMode = true;
 
 			// prompt user to enter the name of the file (with or without the file extension) to import from
@@ -444,11 +454,54 @@ namespace LapTimer
 				}
 
 				// inform user of successful load
-				GTA.UI.Screen.ShowSubtitle("Lap Timer: successfully imported race!");
+				GTA.UI.Notification.Show("Lap Timer: successfully imported race!");
+				
+				// with the race loaded & reconstructed, try to load timing sheet. make sure all hash codes match!
+				int raceHash = GetHashCode();
+				ExportableTimingSheet timingSheet = TimingSheetExporter.deserializeFromJson(raceHash.ToString());
+				for (int i = 0; i < timingSheet.timingData.Length; i++)
+					markedSectorCheckpoints[i].setTimingDataFromSimplified(timingSheet.timingData[i]);
+				GTA.UI.Notification.Show("Lap Timer: successfully imported personal timing sheet for the imported race!");
 			}
 			catch { }
 		}
 
+
+
+		/// <summary>
+		/// Serialize and export timing data of current checkpoints to JSON file.
+		/// </summary>
+		public void exportTimingSheet()
+		{
+			// compute the hash code of this race
+			int raceHash = GetHashCode();
+
+			// build instance of ExportableTimingSheet
+			ExportableTimingSheet timingSheet = new ExportableTimingSheet(){
+				exportDatetime = DateTime.UtcNow,
+				raceHashCode = GetHashCode(),
+				timingData = markedSectorCheckpoints.Select(chkpt => chkpt.getSimplifiedTimingData()).ToArray()
+			};
+
+			// export file
+			TimingSheetExporter.serializeToJson(timingSheet, raceHash.ToString());
+		}
+
+
+
+		/// <summary>
+		/// Compute the hash code of the current race checkpoints list.
+		/// </summary>
+		/// <returns>hash code of the current <c>markedSectorCheckpoints</c></returns>
+		public override int GetHashCode()
+		{
+			int hash = 0;
+
+			foreach (SectorCheckpoint chkpt in markedSectorCheckpoints)
+				hash ^= chkpt.GetHashCode();
+
+			return hash;
+		}
 		#endregion
 	}
 }
