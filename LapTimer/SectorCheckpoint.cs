@@ -17,6 +17,7 @@ namespace LapTimer
 		public Quaternion quarternion;		// Entity.Quarternion
 		public Marker marker;
 		public int number;
+		private int _checkpointHashcode;
 
 		// placement constants
 		public const float checkpointRadius = 8.0f;
@@ -27,6 +28,7 @@ namespace LapTimer
 
 
 
+		#region publicMethods
 		public SectorCheckpoint(int _number)
 			: this(_number, Game.Player.Character.Position, Game.Player.Character.Quaternion)
 		{ }
@@ -40,6 +42,9 @@ namespace LapTimer
 
 			// place a marker (placement mode)
 			marker = placeMarker(MarkerType.placement, number);
+
+			// compute and store the checkpoint's hashcode
+			_checkpointHashcode = computeCheckpointHashcode();
 
 			// debug printout if verbose
 			if (verbose)
@@ -106,6 +111,54 @@ namespace LapTimer
 				marker.blip.Delete();
 			}
 			marker.active = false;
+		}
+
+
+
+		/// <summary>
+		/// Get the hashcode of this checkpoint.
+		/// The hashcode depends on the checkpoint's position, quaternion (orientation), and number.
+		/// </summary>
+		/// <returns>hashcode for this instance of <c>SectorCheckpoint</c></returns>
+		public override int GetHashCode()
+		{
+			return _checkpointHashcode;
+		}
+
+
+
+		public SimplifiedCheckpointTimingData getSimplifiedTimingData()
+		{
+			return new SimplifiedCheckpointTimingData()
+			{
+				fastestTime = timing.fastestTime,
+				vehicleFastestTime = timing.vehicleFastestTime,
+				checkpointHashcode = _checkpointHashcode
+			};
+		}
+
+
+
+		public bool setTimingDataFromSimplified(SimplifiedCheckpointTimingData timingData)
+		{
+			if (timingData.checkpointHashcode != GetHashCode())
+				return false;
+
+			timing.fastestTime = timingData.fastestTime;
+			timing.vehicleFastestTime = timingData.vehicleFastestTime;
+			return true;
+		}
+		#endregion
+
+
+
+		/// <summary>
+		/// Compute hashcode based on the checkpoint's position, quaternion (orientation), and number.
+		/// </summary>
+		/// <returns>hashcode for this instance of <c>SectorCheckpoint</c></returns>
+		private int computeCheckpointHashcode()
+		{
+			return unchecked((position.GetHashCode() + quarternion.GetHashCode()) * number);
 		}
 	}
 

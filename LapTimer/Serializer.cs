@@ -9,14 +9,16 @@ using GTA.Math;
 
 using System.IO;
 using System.Runtime.Serialization.Json;
+using System.Security.Cryptography;
+
 
 namespace LapTimer
 {
 	class RaceExporter
 	{
-		const string rootPath = "./scripts/LapTimer/";
-		const string fileExt = ".json";
-		const string scriptVersion = "v2.0";
+		protected const string rootPath = "./scripts/LapTimer/";
+		protected const string fileExt = ".json";
+		protected const string scriptVersion = "v2.0";
 		
 		/// <summary>
 		/// Create an instance of <c>ExportableRace</c> with data provided.
@@ -55,10 +57,10 @@ namespace LapTimer
 		/// <param name="obj">Object to serialize</param>
 		/// <param name="fileName">Name of file (without extension)</param>
 		/// <returns></returns>
-		public static string serializeToJson(ExportableRace obj, string fileName)
+		public static string serializeToJson(object obj, string fileName)
 		{
 			// create output filestream
-			if (!fileName.EndsWith(fileExt)) fileName += fileExt;			// append file extension, if it is not there already
+			fileName = getFilePath(fileName);
 			System.IO.FileStream file = System.IO.File.Create(rootPath + fileName);
 
 			// instantiate JSON serializer
@@ -81,7 +83,7 @@ namespace LapTimer
 		{
 			try {
 				// attempt to open the file for reading
-				if (!fileName.EndsWith(fileExt)) fileName += fileExt;			// append file extension, if it is not there already
+				fileName = getFilePath(fileName);
 				string filePath = exactPath ? fileName : rootPath + fileName;	// if exactPath is false, then prepend rootPath
 				System.IO.FileStream file = System.IO.File.OpenRead(filePath);
 				
@@ -90,7 +92,7 @@ namespace LapTimer
 				return (ExportableRace) deserializer.ReadObject(file);
 			}
 			catch {
-				GTA.UI.Screen.ShowSubtitle("~r~Lap Timer: failed to load race - file not found.");
+				GTA.UI.Screen.ShowSubtitle("~r~Lap Timer: failed to load race.");
 				throw;
 			}
 		}
@@ -130,6 +132,65 @@ namespace LapTimer
 
 			return races;
 		}
+
+
+
+		protected static string getFilePath(string fileName)
+		{
+			if (!fileName.EndsWith(fileExt)) fileName += fileExt;			// append file extension, if it is not there already
+			return fileName;
+		}
+	}
+
+
+
+	class TimingSheetExporter : RaceExporter
+	{
+		new protected const string rootPath = "./scripts/LapTimer/timing_sheets/";
+
+
+		new public static string serializeToJson(ExportableTimingSheet obj, string fileName)
+		{
+			// create output filestream
+			fileName = getFilePath(fileName);
+			System.IO.FileStream file = System.IO.File.Create(rootPath + fileName);
+
+			// instantiate JSON serializer
+			var serializer = new DataContractJsonSerializer(typeof(ExportableTimingSheet));
+			serializer.WriteObject(file, obj);
+
+			// close file stream & return file name
+			file.Close();
+			return fileName;
+		}
+
+
+
+		/// <summary>
+		/// Deserialize <c>ExportableTimingSheet</c> from a JSON file
+		/// </summary>
+		/// <param name="fileName">name of JSON file to read from</param>
+		/// <returns></returns>
+		new public static ExportableTimingSheet deserializeFromJson(string fileName, bool exactPath = false)
+		{
+			try
+			{
+				// attempt to open the file for reading
+				fileName = getFilePath(fileName);
+				string filePath = exactPath ? fileName : rootPath + fileName;	// if exactPath is false, then prepend rootPath
+				System.IO.FileStream file = System.IO.File.OpenRead(filePath);
+
+				// instantiate JSON deserializer
+				var deserializer = new DataContractJsonSerializer(typeof(ExportableTimingSheet));
+				return (ExportableTimingSheet)deserializer.ReadObject(file);
+			}
+			catch
+			{
+				throw;
+			}
+		}
+
+
 	}
 
 
@@ -138,17 +199,21 @@ namespace LapTimer
 	{
 		public string version;
 		public string name;
+		public string description;
+
 		public string filePath;
 	}
 
 
 	public struct ExportableRace
 	{
+		// metadata
 		public string version;	// script version that the race was exported from/intended for
 		public string name;		// name of the race
+		public string description;
+
 		public bool lapMode;
 		public int numCheckpoints;
-
 		public SimplifiedCheckpoint[] checkpoints;
 	}
 
@@ -158,5 +223,21 @@ namespace LapTimer
 		public Vector3 position;
 		public Quaternion quarternion;
 		public int number;
+	}
+
+
+	public struct ExportableTimingSheet
+	{
+		public DateTime exportDatetime;
+		public SimplifiedCheckpointTimingData[] timingData;
+		public int raceHashCode;
+	}
+
+
+	public struct SimplifiedCheckpointTimingData
+	{
+		public int fastestTime;
+		public Dictionary<string, int> vehicleFastestTime;
+		public int checkpointHashcode;
 	}
 }

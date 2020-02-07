@@ -58,6 +58,10 @@ namespace LapTimer
 			UIMenu raceImportMenu = _menuPool.AddSubMenu(mainMenu, "Race Import Menu");
 			buildRaceImportMenu(raceImportMenu);
 
+			// add a submenu for race control
+			UIMenu raceControlMenu = _menuPool.AddSubMenu(mainMenu, "Race Control Menu");
+			buildRaceControlMenu(raceControlMenu);
+
 			// add controls to enter placement & race modes
 			UIMenuItem placementToggle = new UIMenuItem("Toggle Placement Mode");
 			UIMenuItem raceToggle = new UIMenuItem("Toggle Race Mode");
@@ -92,6 +96,28 @@ namespace LapTimer
 				};
 				submenu.AddItem(item);
 			}
+
+			return submenu;
+		}
+
+
+
+		private UIMenu buildRaceControlMenu(UIMenu submenu)
+		{
+			// add button to place checkpoint
+			UIMenuItem addCheckpointBtn = new UIMenuItem("Place checkpoint", "Place a checkpoint at the player's current location");
+			addCheckpointBtn.Activated += (m, i) => race.createSectorCheckpoint();
+			submenu.AddItem(addCheckpointBtn);
+
+			// undo last placed checkpoint
+			UIMenuItem undoCheckpointBtn = new UIMenuItem("Undo last checkpoint", "Remove the last checkpoint");
+			undoCheckpointBtn.Activated += (m, i) => race.deleteLastSectorCheckpoint();
+			submenu.AddItem(undoCheckpointBtn);
+
+			// delete all checkpoints
+			UIMenuItem deleteAllCheckpointsBtn = new UIMenuItem("Delete all checkpoints");
+			deleteAllCheckpointsBtn.Activated += (m, i) => race.clearAllSectorCheckpoints();
+			submenu.AddItem(deleteAllCheckpointsBtn);
 
 			return submenu;
 		}

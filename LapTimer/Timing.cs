@@ -26,6 +26,7 @@ namespace LapTimer
 		public TimeType latestTimeType;
 
 
+		#region publicMethods
 		/// <summary>
 		/// Update timing data. Split times will be computed based on the data.
 		/// </summary>
@@ -58,9 +59,11 @@ namespace LapTimer
 				latestRecordSplitTime <= 0 ? 'g' : 'r', TimingData.msToReadable(latestRecordSplitTime, true),
 				latestVehicleSplitTime <= 0 ? 'g' : 'r', TimingData.msToReadable(latestVehicleSplitTime, true));
 		}
+		#endregion
 
 
 
+		#region helpers
 		/// <summary>
 		/// Compute <c>TimeType</c> based on latest timing data, and update records as needed
 		/// </summary>
@@ -110,9 +113,11 @@ namespace LapTimer
 				latestVehicleSplitTime = latestTime - vehicleFastestTime[latestVehicle];
 			else latestVehicleSplitTime = 0;
 		}
+		#endregion
 
 
 
+		#region staticMethods
 		/// <summary>
 		/// Convert a time in milliseconds to a readable format. Minutes will be omitted unless forced or >= 60000 ms.
 		/// </summary>
@@ -133,5 +138,6 @@ namespace LapTimer
 			else
 				return time >= 0 ? ret : '-' + ret;
 		}
+		#endregion
 	}
 }
