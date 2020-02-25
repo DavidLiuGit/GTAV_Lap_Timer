@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using GTA;
 using NativeUI;
@@ -55,12 +56,17 @@ namespace LapTimer
 			mainMenu = new UIMenu("Race Timer", "~b~by iLike2Teabag");
 
 			// add a submenu to handle race imports
-			UIMenu raceImportMenu = _menuPool.AddSubMenu(mainMenu, "Race Import Menu");
+			UIMenu raceImportMenu = _menuPool.AddSubMenu(mainMenu, "Race Import Menu", "Choose races to import from file");
 			buildRaceImportMenu(raceImportMenu);
 
 			// add a submenu for race control
 			UIMenu raceControlMenu = _menuPool.AddSubMenu(mainMenu, "Race Control Menu");
 			buildRaceControlMenu(raceControlMenu);
+
+			// add a submenu for Timing Sheet
+			UIMenu lapTimeMenu = _menuPool.AddSubMenu(mainMenu, "Lap Times", "Display lap times for the current race");
+			lapTimeMenu.OnMenuOpen += loadLapTimeMenu;
+			//buildTimingSheetMenu(timingSheetMenu);
 
 			// add controls to enter placement & race modes
 			UIMenuItem placementToggle = new UIMenuItem("Toggle Placement Mode");
@@ -78,7 +84,30 @@ namespace LapTimer
 			mainMenu.RefreshIndex();
 			return mainMenu;
 		}
+		
 
+
+		private void loadLapTimeMenu(UIMenu sender)
+		{
+			// clear the menu
+			sender.Clear();
+
+			// validate the race; if race is invalid
+			if (!race.isValid)
+				return;
+
+			// get the last checkpoint in list of checkpoints
+			SectorCheckpoint finalChkpt = race.finishCheckpoint;
+
+			// iterate over each k-v in the final checkpoint's timing data
+			var times = finalChkpt.timing.vehicleFastestTime.OrderBy(x => x.Value);
+			foreach (KeyValuePair<string, int> entry in times)
+			{
+				sender.AddItem(new UIMenuItem(TimingData.msToReadable(entry.Value, false, true) + " - " + entry.Key));
+			}
+
+			sender.RefreshIndex();
+		}
 
 
 		private UIMenu buildRaceImportMenu(UIMenu submenu)

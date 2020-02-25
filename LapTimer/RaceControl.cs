@@ -503,5 +503,26 @@ namespace LapTimer
 			return hash;
 		}
 		#endregion
+
+
+
+		#region accessors
+		/// <summary>
+		/// Determines whether the current placement of checkpoints makes a valid race.
+		/// </summary>
+		public bool isValid
+		{
+			get	{ return validateCheckpoints(markedSectorCheckpoints); }
+		}
+
+
+		/// <summary>
+		/// Get the final checkpoint of the race. Returns null if the race is invalid
+		/// </summary>
+		public SectorCheckpoint finishCheckpoint
+		{
+			get { return isValid ? markedSectorCheckpoints[markedSectorCheckpoints.Count - 1] : null; }
+		}
+		#endregion
 	}
 }
