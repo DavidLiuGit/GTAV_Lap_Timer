@@ -44,8 +44,15 @@ namespace LapTimer
 				// setup tasks
 				race = new RaceControl();
 				readSettings(base.Settings);
-				menu = new NativeUIMenu(ref race);
 				KeyDown += onKeyDown;
+				try
+				{
+					menu = new NativeUIMenu(ref race);
+				}
+				catch
+				{
+					GTA.UI.Notification.Show("Lap Timer: ~r~Failed to initialize menu. Make sure you have NativeUI.dll");
+				}
 			}
 
 
