@@ -135,11 +135,17 @@ namespace LapTimer
 			// get player's position and compute distance to the position of the active checkpoint
 			float dist = Game.Player.Character.Position.DistanceTo2D(activeCheckpoint.position);
 
-			try
-			{
-				// get data on the player's current vehicle
-				string vehName = Game.Player.Character.CurrentVehicle.DisplayName;
+			// get data on player's current vehicle
+			Vehicle veh = Game.Player.Character.CurrentVehicle;
 
+			// if player is not currently in a vehicle, display message and exit race mode
+			if (veh == null) {
+				GTA.UI.Screen.ShowSubtitle("Lap Timer: exited vehicle; leaving Race Mode.");
+				exitRaceMode();
+				return int.MaxValue;
+			}
+
+			try {
 				// check if it is within the specified maximum (margin * checkpointRadius)
 				if (dist < margin * SectorCheckpoint.checkpointRadius)
 				{
@@ -147,7 +153,7 @@ namespace LapTimer
 					int elapsedTime = Game.GameTime - raceStartTime;
 
 					// save and display elapsed
-					TimeType tType = activeCheckpoint.timing.updateTiming(elapsedTime, vehName);
+					TimeType tType = activeCheckpoint.timing.updateTiming(elapsedTime, veh.DisplayName);
 					string notifString = activeCheckpoint.timing.getLatestTimingSummaryString();
 					GTA.UI.Notification.Show(string.Format("Checkpoint {0}: ~n~{1}", activeSector, notifString));
 
@@ -155,11 +161,9 @@ namespace LapTimer
 					activateRaceCheckpoint(activeSector + 1);
 				}
 			}
-			catch
+			catch (Exception e)
 			{
-				// player is not longer in a vehicle, or some other exception
-				GTA.UI.Screen.ShowSubtitle("Lap Timer: exited vehicle; leaving Race Mode.");
-				exitRaceMode();
+				GTA.UI.Notification.Show("Lap Timer Exception: " + e.StackTrace.ToString());
 			}
 
 			return 0;
@@ -241,7 +245,8 @@ namespace LapTimer
 		/// </summary>
 		public void exitRaceMode(bool verbose = true)
 		{
-			markedSectorCheckpoints[activeSector].hideMarker();
+			//markedSectorCheckpoints[activeSector].hideMarker();
+			hideAllSectorCheckpoints();
 
 			// try to restore Weather, if possible
 			World.Weather = weather;
@@ -340,12 +345,20 @@ namespace LapTimer
 					raceFinishedHandler(activeCheckpoint);
 					return activeCheckpoint;
 				}
+
+				// if lapped race, activate the 0th checkpoint
+				else
+				{
+					idx = 0;
+				}
 			}
 
 			// set the new SectorCheckpoint as active (by index)
 			activeSector = idx;
 			activeCheckpoint = markedSectorCheckpoints[idx];
-			bool isFinal = idx == markedSectorCheckpoints.Count - 1;			// determine if this is the final checkpoint based on the index
+
+			// determine if this is the final checkpoint based on the index
+			bool isFinal = idx == markedSectorCheckpoints.Count - 1 || idx == 0;
 
 			// the marker placed should be different, depending on whether this checkpoint is final
 			if (isFinal)

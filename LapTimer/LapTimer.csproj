@@ -59,7 +59,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /Y "$(Targetpath)" "E:\Games\GTAV\scripts"
+    <PostBuildEvent>copy /Y "$(Targetpath)" "H:\Games\Grand Theft Auto V\scripts"
 powershell "Compress-Archive -Force '$(ProjectDir)/assets/$(TargetName).ini', '$(TargetPath)', '$(SolutionDir)README.html' '$(TargetDir)$(TargetName).zip'"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
