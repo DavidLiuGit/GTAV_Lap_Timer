@@ -21,7 +21,6 @@ namespace LapTimer
 		bool firstTime = true;
 		string ModName = "Lap Timer";
 		string Developer = "iLike2Teabag";
-		string Version = "1.0";
 		#endregion
 
 
@@ -39,7 +38,7 @@ namespace LapTimer
 		{
 			if (firstTime) // if this is the users first time loading the mod, this information will appear
 			{
-				GTA.UI.Screen.ShowSubtitle(ModName + " " + Version + " by " + Developer + " Loaded");
+				GTA.UI.Screen.ShowSubtitle(ModName + " by " + Developer + " Loaded");
 				firstTime = false;
 
 				// setup tasks
