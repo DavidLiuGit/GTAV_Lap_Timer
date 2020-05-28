@@ -29,7 +29,7 @@ namespace LapTimer
 
 		// race mode variables
 		public SectorCheckpoint activeCheckpoint;		// track the active sector checkpoint
-		public int freezeTime = 500;
+		public int freezeTime;							// time in milliseconds to freeze player's car after race starts. Timer will not run
 		public int activeSector;						// track the active sector number
 		public int raceStartTime;
 		public Weather weather;
