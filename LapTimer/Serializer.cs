@@ -18,7 +18,7 @@ namespace LapTimer
 	{
 		protected const string rootPath = "./scripts/LapTimer/";
 		protected const string fileExt = ".json";
-		protected const string scriptVersion = "v2.0";
+		protected const string scriptVersion = "v3.0";
 		
 		/// <summary>
 		/// Create an instance of <c>ExportableRace</c> with data provided.
@@ -149,7 +149,7 @@ namespace LapTimer
 		new protected const string rootPath = "./scripts/LapTimer/timing_sheets/";
 
 
-		new public static string serializeToJson(ExportableTimingSheet obj, string fileName)
+		public static string serializeToJson(ExportableTimingSheet obj, string fileName)
 		{
 			// create output filestream
 			fileName = getFilePath(fileName);
@@ -200,6 +200,7 @@ namespace LapTimer
 		public string version;
 		public string name;
 		public string description;
+		public bool lapMode;
 
 		public string filePath;
 	}

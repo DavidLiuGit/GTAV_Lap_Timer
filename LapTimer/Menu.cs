@@ -60,8 +60,9 @@ namespace LapTimer
 			buildRaceImportMenu(raceImportMenu);
 
 			// add a submenu for race control
-			UIMenu raceControlMenu = _menuPool.AddSubMenu(mainMenu, "Race Control Menu");
-			buildRaceControlMenu(raceControlMenu);
+			UIMenu raceControlMenu = _menuPool.AddSubMenu(mainMenu, "Race Control Menu", "Modify checkpoints and race mode");
+			raceControlMenu.OnMenuOpen += buildRaceControlMenu;
+			//buildRaceControlMenu(raceControlMenu);
 
 			// add a submenu for Timing Sheet
 			UIMenu lapTimeMenu = _menuPool.AddSubMenu(mainMenu, "Lap Times", "Display lap times for the current race");
@@ -79,12 +80,6 @@ namespace LapTimer
 			UIMenuItem exportRaceItem = new UIMenuItem("Export Race");
 			exportRaceItem.Activated += (menu, sender) => race.exportRace();
 			mainMenu.AddItem(exportRaceItem);
-
-			// add control to toggle lap mode
-			string lapModeDescription = "If checked, race is a circuit, and automatically restarts. If unchecked, race is point-to-point";
-			UIMenuCheckboxItem lapModeItem = new UIMenuCheckboxItem("Lap Mode", race.lapRace, lapModeDescription);
-			lapModeItem.CheckboxEvent += (sender, status) => race.lapRace = !race.lapRace;
-			mainMenu.AddItem(lapModeItem);
 
 			mainMenu.RefreshIndex();
 			return mainMenu;
@@ -122,7 +117,10 @@ namespace LapTimer
 			
 			// iterate over each race & add to menu, along with their handlers
 			foreach (ImportableRace r in races){
-				UIMenuItem item = new UIMenuItem(r.name, r.version ?? "v1.x");
+				string descriptionString = r.name + 
+					"\nMode: " + (r.lapMode ? "circuit" : "point-to-point") + 
+					"\nVersion: " + r.version ?? "v1.x";
+				UIMenuItem item = new UIMenuItem(r.name, descriptionString);
 				item.Activated += (menu, sender) =>
 				{
 					race.importRace(r.filePath);
@@ -136,8 +134,16 @@ namespace LapTimer
 
 
 
-		private UIMenu buildRaceControlMenu(UIMenu submenu)
+		private void buildRaceControlMenu(UIMenu submenu)
 		{
+			submenu.Clear();
+
+			// add checkbox to toggle lap mode
+			string lapModeDescription = "If checked, race is a circuit, and automatically restarts. If unchecked, race is point-to-point";
+			UIMenuCheckboxItem lapModeItem = new UIMenuCheckboxItem("Lap Mode", race.lapRace, lapModeDescription);
+			lapModeItem.CheckboxEvent += (sender, status) => race.lapRace = status;
+			submenu.AddItem(lapModeItem);
+
 			// add button to place checkpoint
 			UIMenuItem addCheckpointBtn = new UIMenuItem("Place checkpoint", "Place a checkpoint at the player's current location");
 			addCheckpointBtn.Activated += (m, i) => race.createSectorCheckpoint();
@@ -153,7 +159,7 @@ namespace LapTimer
 			deleteAllCheckpointsBtn.Activated += (m, i) => race.clearAllSectorCheckpoints();
 			submenu.AddItem(deleteAllCheckpointsBtn);
 
-			return submenu;
+			//return submenu;
 		}
 
 		#endregion
