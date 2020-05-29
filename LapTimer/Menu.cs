@@ -66,7 +66,6 @@ namespace LapTimer
 			// add a submenu for Timing Sheet
 			UIMenu lapTimeMenu = _menuPool.AddSubMenu(mainMenu, "Lap Times", "Display lap times for the current race");
 			lapTimeMenu.OnMenuOpen += loadLapTimeMenu;
-			//buildTimingSheetMenu(timingSheetMenu);
 
 			// add controls to enter placement & race modes
 			UIMenuItem placementToggle = new UIMenuItem("Toggle Placement Mode");
@@ -80,6 +79,12 @@ namespace LapTimer
 			UIMenuItem exportRaceItem = new UIMenuItem("Export Race");
 			exportRaceItem.Activated += (menu, sender) => race.exportRace();
 			mainMenu.AddItem(exportRaceItem);
+
+			// add control to toggle lap mode
+			string lapModeDescription = "If checked, race is a circuit, and automatically restarts. If unchecked, race is point-to-point";
+			UIMenuCheckboxItem lapModeItem = new UIMenuCheckboxItem("Lap Mode", race.lapRace, lapModeDescription);
+			lapModeItem.CheckboxEvent += (sender, status) => race.lapRace = !race.lapRace;
+			mainMenu.AddItem(lapModeItem);
 
 			mainMenu.RefreshIndex();
 			return mainMenu;

@@ -342,20 +342,21 @@ namespace LapTimer
 			catch { }
 
 			// detect if index is out of expected range
-			if (idx >= markedSectorCheckpoints.Count)
+			if (idx >= markedSectorCheckpoints.Count && lapRace)
 			{
-				// if point-to-point race, then race is completed. Print time and exit race mode.
-				if (!lapRace)
-				{
-					lapFinishedHandler(activeCheckpoint);
-					return activeCheckpoint;
-				}
+				//// if point-to-point race, then race is completed. Print time and exit race mode.
+				//if (!lapRace)
+				//{
+				//	lapFinishedHandler(activeCheckpoint);
+				//	return activeCheckpoint;
+				//}
 
-				// if lapped race, activate the 0th checkpoint
-				else
-				{
-					idx = 0;
-				}
+				//// if lapped race, activate the 0th checkpoint
+				//else
+				//{
+				//	idx = 0;
+				//}
+				idx = 0;
 			}
 
 			// set the new SectorCheckpoint as active (by index)
@@ -372,11 +373,23 @@ namespace LapTimer
 			// if not final checkpoint, place a checkpoint w/ an arrow pointing to the next checkpoint
 			else
 			{
-				Vector3 nextChkptPosition = markedSectorCheckpoints[idx + 1].position;
+				Vector3 nextChkptPosition = getNextCheckpoint(idx).position;
 				activeCheckpoint.marker = activeCheckpoint.placeMarker(MarkerType.raceArrow, idx, nextChkptPosition);
 			}
 
 			return activeCheckpoint;
+		}
+
+
+
+		/// <summary>
+		/// Given the current checkpoint index, return the next checkpoint
+		/// </summary>
+		/// <param name="currentIndex">Index of current checkpoint</param>
+		/// <returns>next <c>SectorCheckpoint</c></returns>
+		private SectorCheckpoint getNextCheckpoint(int currentIndex)
+		{
+			return this.markedSectorCheckpoints[(currentIndex + 1) % this.markedSectorCheckpoints.Count];
 		}
 
 
@@ -517,7 +530,7 @@ namespace LapTimer
 
 
 		/// <summary>
-		/// Compute the hash code of the current race checkpoints list.
+		/// Compute the hash code of the current race checkpoints list and other race settings.
 		/// </summary>
 		/// <returns>hash code of the current <c>markedSectorCheckpoints</c></returns>
 		public override int GetHashCode()
@@ -526,6 +539,8 @@ namespace LapTimer
 
 			foreach (SectorCheckpoint chkpt in markedSectorCheckpoints)
 				hash ^= chkpt.GetHashCode();
+
+			if (lapRace) hash = hash << 1 + 1;
 
 			return hash;
 		}
