@@ -44,6 +44,7 @@ In v3, support for circuit races were implemented. Whereas all races in earlier 
 
 Similar to qualifying in motorsports like F1, when racing in Lap Mode, your first lap is an "out lap", and subsequent laps are "flying laps". As before, your timing sheet is exported when you complete a lap.
 
+`Menu > Race Controls > Lap Mode`
 
 ### Colors for elapsed time
 - **Purple**: overall fastest time
@@ -74,7 +75,7 @@ Your race's timing sheet is automatically imported when you import a race, as lo
 
 ### Change Log
 #### 3.0
-- implemented lap (circuit) mode!
+- implemented lap (circuit) mode! Toggle found at `Menu > Race Controls > Lap Mode`
 - modified preset races to properly support lap mode
 - improved stability with under-the-hood changes
 
