@@ -21,7 +21,6 @@ namespace LapTimer
 		bool firstTime = true;
 		string ModName = "Lap Timer";
 		string Developer = "iLike2Teabag";
-		string Version = "1.0";
 		#endregion
 
 
@@ -30,22 +29,30 @@ namespace LapTimer
 		{
 			Tick += onTick;
 			Tick += (o, e) => menu._menuPool.ProcessMenus();
-			KeyDown += onKeyDown;
 			Interval = 1;
 			Aborted += OnShutdown;
 		}
+
 
 		private void onTick(object sender, EventArgs e)
 		{
 			if (firstTime) // if this is the users first time loading the mod, this information will appear
 			{
-				GTA.UI.Screen.ShowSubtitle(ModName + " " + Version + " by " + Developer + " Loaded");
+				GTA.UI.Screen.ShowSubtitle(ModName + " by " + Developer + " Loaded");
 				firstTime = false;
 
 				// setup tasks
 				race = new RaceControl();
-				readSettings();
-				menu = new NativeUIMenu(ref race);
+				readSettings(base.Settings);
+				KeyDown += onKeyDown;
+				try
+				{
+					menu = new NativeUIMenu(ref race);
+				}
+				catch
+				{
+					GTA.UI.Notification.Show("Lap Timer: ~r~Failed to initialize menu. Make sure you have NativeUI.dll");
+				}
 			}
 
 
@@ -61,19 +68,14 @@ namespace LapTimer
 
 		// ------------- PROPERTIES/VARIABLES -----------------
 		#region properties
-
 		// references
 		NativeUIMenu menu;
 		RaceControl race;
 
 		// hotkeys
 		Keys menuKey;
-		Keys placementActivateKey, addCheckpointKey, undoCheckpointKey, clearCheckpointsKey, exportRaceKey, importRaceKey;
+		Keys placementActivateKey, addCheckpointKey, undoCheckpointKey, clearCheckpointsKey;
 		Keys raceActivateKey, restartRaceKey;
-
-		// constants
-		IniFile settings = new IniFile("./scripts/LapTimer.ini");
-
 		#endregion
 
 
@@ -103,14 +105,6 @@ namespace LapTimer
 				// Ctrl+D: clear all SectorCheckpoints, and delete any blips & checkpoints from World
 				else if (e.KeyCode == clearCheckpointsKey)
 					race.clearAllSectorCheckpoints();
-
-				// export current race to JSON file
-				else if (e.KeyCode == exportRaceKey)
-					race.exportRace();
-
-				// import a race from a JSON file
-				else if (e.KeyCode == importRaceKey)
-					race.importRace();
 			}
 
 			// enter/exit race mode with F6
@@ -148,32 +142,24 @@ namespace LapTimer
 		/// <summary>
 		/// Read in INI key settings. Includes default settings if INI read fails.
 		/// </summary>
-		private void readSettings()
+		private void readSettings(ScriptSettings ss)
 		{
 			// read & parse placement mode hotkeys
-			placementActivateKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("activate", "Placement") ?? "F5");
-			addCheckpointKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("addCheckpoint", "Placement") ?? "X");
-			undoCheckpointKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("undoCheckpoint", "Placement") ?? "Z");
-			clearCheckpointsKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("clearCheckpoints", "Placement") ?? "D");
-			exportRaceKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("exportRace", "Placement") ?? "O");
-			importRaceKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("importRaceKey", "Placement") ?? "I");
+			string section = "Placement";
+			placementActivateKey = ss.GetValue<Keys>(section, "activate", Keys.F5);
+			addCheckpointKey = ss.GetValue<Keys>(section, "addCheckpoint", Keys.X);
+			undoCheckpointKey = ss.GetValue<Keys>(section, "undoCheckpoint", Keys.Z);
+			clearCheckpointsKey = ss.GetValue<Keys>(section, "clearCheckpoints", Keys.D);
 
 			// read race mode hotkeys
-			raceActivateKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("activate", "Race") ?? "F6");
-			restartRaceKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("restartRace", "Race") ?? "R");
+			section = "Race";
+			raceActivateKey = ss.GetValue<Keys>(section, "activate", Keys.F6);
+			restartRaceKey = ss.GetValue<Keys>(section, "restartRace", Keys.R);
+			race.freezeTime = ss.GetValue<int>(section, "freezeTime", 750);
 
 			// read Script hotkeys
-			menuKey = (Keys)Enum.Parse(typeof(Keys), settings.Read("menu", "Script") ?? "N");
-
-			// read race mode settings
-			try
-			{
-				race.freezeTime = Int32.Parse(settings.Read("freezeTime", "Race"));
-			}
-			catch (FormatException)
-			{
-				GTA.UI.Notification.Show("~r~Lap Timer: invalid freeze time setting. Using default setting.");
-			}
+			section = "Script";
+			menuKey = ss.GetValue<Keys>(section, "menu", Keys.N);
 		}
 
 		#endregion

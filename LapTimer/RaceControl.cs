@@ -29,9 +29,9 @@ namespace LapTimer
 
 		// race mode variables
 		public SectorCheckpoint activeCheckpoint;		// track the active sector checkpoint
-		public int freezeTime = 500;
+		public int freezeTime;							// time in milliseconds to freeze player's car after race starts. Timer will not run
 		public int activeSector;						// track the active sector number
-		public int raceStartTime;
+		public int lapStartTime;
 		public Weather weather;
 
 		#endregion
@@ -135,31 +135,40 @@ namespace LapTimer
 			// get player's position and compute distance to the position of the active checkpoint
 			float dist = Game.Player.Character.Position.DistanceTo2D(activeCheckpoint.position);
 
-			try
-			{
-				// get data on the player's current vehicle
-				string vehName = Game.Player.Character.CurrentVehicle.DisplayName;
+			// get data on player's current vehicle
+			Vehicle veh = Game.Player.Character.CurrentVehicle;
 
+			// if player is not currently in a vehicle, display message and exit race mode
+			if (veh == null) {
+				GTA.UI.Screen.ShowSubtitle("Lap Timer: exited vehicle; leaving Race Mode.");
+				exitRaceMode();
+				return int.MaxValue;
+			}
+
+			try {
 				// check if it is within the specified maximum (margin * checkpointRadius)
 				if (dist < margin * SectorCheckpoint.checkpointRadius)
 				{
 					// compute time elapsed since race start
-					int elapsedTime = Game.GameTime - raceStartTime;
+					int elapsedTime = Game.GameTime - lapStartTime;
 
 					// save and display elapsed
-					TimeType tType = activeCheckpoint.timing.updateTiming(elapsedTime, vehName);
+					TimeType tType = activeCheckpoint.timing.updateTiming(elapsedTime, veh.DisplayName);
 					string notifString = activeCheckpoint.timing.getLatestTimingSummaryString();
 					GTA.UI.Notification.Show(string.Format("Checkpoint {0}: ~n~{1}", activeSector, notifString));
 
-					// activate next checkpoint
-					activateRaceCheckpoint(activeSector + 1);
+					// detect if the checkpoint reached is the final checkpoint
+					if (activeCheckpoint.GetHashCode() == finishCheckpoint.GetHashCode())
+						lapFinishedHandler(activeCheckpoint, lapRace);
+
+					// activate next checkpoint if race mode is still active
+					if (raceMode)
+						activateRaceCheckpoint(activeSector + 1);
 				}
 			}
-			catch
+			catch (Exception e)
 			{
-				// player is not longer in a vehicle, or some other exception
-				GTA.UI.Screen.ShowSubtitle("Lap Timer: exited vehicle; leaving Race Mode.");
-				exitRaceMode();
+				GTA.UI.Notification.Show("Lap Timer Exception: " + e.StackTrace.ToString());
 			}
 
 			return 0;
@@ -233,7 +242,7 @@ namespace LapTimer
 			GTA.UI.Screen.ShowSubtitle("~g~Lap Timer: Go!");
 
 			// start the clock by getting the current GameTime
-			raceStartTime = Game.GameTime;
+			lapStartTime = Game.GameTime;
 		}
 
 		/// <summary>
@@ -241,7 +250,8 @@ namespace LapTimer
 		/// </summary>
 		public void exitRaceMode(bool verbose = true)
 		{
-			markedSectorCheckpoints[activeSector].hideMarker();
+			//markedSectorCheckpoints[activeSector].hideMarker();
+			hideAllSectorCheckpoints();
 
 			// try to restore Weather, if possible
 			World.Weather = weather;
@@ -332,20 +342,29 @@ namespace LapTimer
 			catch { }
 
 			// detect if index is out of expected range
-			if (idx >= markedSectorCheckpoints.Count)
+			if (idx >= markedSectorCheckpoints.Count && lapRace)
 			{
-				// if point-to-point race, then race is completed. Print time and exit race mode.
-				if (!lapRace)
-				{
-					raceFinishedHandler(activeCheckpoint);
-					return activeCheckpoint;
-				}
+				//// if point-to-point race, then race is completed. Print time and exit race mode.
+				//if (!lapRace)
+				//{
+				//	lapFinishedHandler(activeCheckpoint);
+				//	return activeCheckpoint;
+				//}
+
+				//// if lapped race, activate the 0th checkpoint
+				//else
+				//{
+				//	idx = 0;
+				//}
+				idx = 0;
 			}
 
 			// set the new SectorCheckpoint as active (by index)
 			activeSector = idx;
 			activeCheckpoint = markedSectorCheckpoints[idx];
-			bool isFinal = idx == markedSectorCheckpoints.Count - 1;			// determine if this is the final checkpoint based on the index
+
+			// determine if this is the final checkpoint based on the index
+			bool isFinal = activeCheckpoint.GetHashCode() == finishCheckpoint.GetHashCode(); //idx == markedSectorCheckpoints.Count - 1 || idx == 0;
 
 			// the marker placed should be different, depending on whether this checkpoint is final
 			if (isFinal)
@@ -354,11 +373,23 @@ namespace LapTimer
 			// if not final checkpoint, place a checkpoint w/ an arrow pointing to the next checkpoint
 			else
 			{
-				Vector3 nextChkptPosition = markedSectorCheckpoints[idx + 1].position;
+				Vector3 nextChkptPosition = getNextCheckpoint(idx).position;
 				activeCheckpoint.marker = activeCheckpoint.placeMarker(MarkerType.raceArrow, idx, nextChkptPosition);
 			}
 
 			return activeCheckpoint;
+		}
+
+
+
+		/// <summary>
+		/// Given the current checkpoint index, return the next checkpoint
+		/// </summary>
+		/// <param name="currentIndex">Index of current checkpoint</param>
+		/// <returns>next <c>SectorCheckpoint</c></returns>
+		private SectorCheckpoint getNextCheckpoint(int currentIndex)
+		{
+			return this.markedSectorCheckpoints[(currentIndex + 1) % this.markedSectorCheckpoints.Count];
 		}
 
 
@@ -383,16 +414,25 @@ namespace LapTimer
 
 
 
-		private void raceFinishedHandler(SectorCheckpoint finalChkpt)
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="finalChkpt"><c>SectorCheckpoint</c> to extract timing summary from</param>
+		/// <param name="lapRaceMode">if <c>true</c>, invoke exitRaceMode()</param>
+		private void lapFinishedHandler(SectorCheckpoint finalChkpt, bool lapRaceMode = false)
 		{
 			// display on screen a summary of the race results
-			GTA.UI.Screen.ShowSubtitle("Race completed. ~n~" + activeCheckpoint.timing.getLatestTimingSummaryString(), 10000);
+			GTA.UI.Screen.ShowSubtitle("Lap completed. ~n~" + finalChkpt.timing.getLatestTimingSummaryString(), 10000);
 
 			// export timing sheet
 			exportTimingSheet();
 
-			// clean up
-			exitRaceMode();
+			// exit race mode if point-to-point (i.e. non-lapped) race
+			if (!lapRaceMode)
+				exitRaceMode();
+
+			// otherwise, if lapped race, reset the timer
+			else lapStartTime = Game.GameTime;
 		}
 		#endregion
 
@@ -490,7 +530,7 @@ namespace LapTimer
 
 
 		/// <summary>
-		/// Compute the hash code of the current race checkpoints list.
+		/// Compute the hash code of the current race checkpoints list and other race settings.
 		/// </summary>
 		/// <returns>hash code of the current <c>markedSectorCheckpoints</c></returns>
 		public override int GetHashCode()
@@ -499,6 +539,8 @@ namespace LapTimer
 
 			foreach (SectorCheckpoint chkpt in markedSectorCheckpoints)
 				hash ^= chkpt.GetHashCode();
+
+			if (lapRace) hash = hash << 1 + 1;
 
 			return hash;
 		}
@@ -517,11 +559,16 @@ namespace LapTimer
 
 
 		/// <summary>
-		/// Get the final checkpoint of the race. Returns null if the race is invalid
+		/// Get the final checkpoint of the race. Returns null if the race is invalid.
+		/// For lapped races, the "finish checkpoint" is the 0th checkpoint. For non-lapped races,
+		/// it is the last checkpoint in the list.
 		/// </summary>
 		public SectorCheckpoint finishCheckpoint
 		{
-			get { return isValid ? markedSectorCheckpoints[markedSectorCheckpoints.Count - 1] : null; }
+			get {
+				if (!isValid) return null;
+				return lapRace ? markedSectorCheckpoints[0] : markedSectorCheckpoints.Last();
+			}
 		}
 		#endregion
 	}

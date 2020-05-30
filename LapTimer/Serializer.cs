@@ -7,6 +7,7 @@ using GTA;
 using GTA.Native;
 using GTA.Math;
 
+using System.Text.RegularExpressions;
 using System.IO;
 using System.Runtime.Serialization.Json;
 using System.Security.Cryptography;
@@ -18,7 +19,7 @@ namespace LapTimer
 	{
 		protected const string rootPath = "./scripts/LapTimer/";
 		protected const string fileExt = ".json";
-		protected const string scriptVersion = "v2.0";
+		protected const string scriptVersion = "v3.0";
 		
 		/// <summary>
 		/// Create an instance of <c>ExportableRace</c> with data provided.
@@ -137,7 +138,12 @@ namespace LapTimer
 
 		protected static string getFilePath(string fileName)
 		{
-			if (!fileName.EndsWith(fileExt)) fileName += fileExt;			// append file extension, if it is not there already
+			// replace all non-alphanumeric characters (special chars & whitespace chars) with underscore
+			Regex.Replace(fileName, @"\W+", "_");
+
+			// append file extension, if it is not there already
+			if (!fileName.EndsWith(fileExt)) fileName += fileExt;
+
 			return fileName;
 		}
 	}
@@ -149,7 +155,7 @@ namespace LapTimer
 		new protected const string rootPath = "./scripts/LapTimer/timing_sheets/";
 
 
-		new public static string serializeToJson(ExportableTimingSheet obj, string fileName)
+		public static string serializeToJson(ExportableTimingSheet obj, string fileName)
 		{
 			// create output filestream
 			fileName = getFilePath(fileName);
@@ -200,6 +206,7 @@ namespace LapTimer
 		public string version;
 		public string name;
 		public string description;
+		public bool lapMode;
 
 		public string filePath;
 	}
