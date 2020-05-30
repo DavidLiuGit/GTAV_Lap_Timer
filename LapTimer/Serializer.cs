@@ -7,6 +7,7 @@ using GTA;
 using GTA.Native;
 using GTA.Math;
 
+using System.Text.RegularExpressions;
 using System.IO;
 using System.Runtime.Serialization.Json;
 using System.Security.Cryptography;
@@ -137,7 +138,12 @@ namespace LapTimer
 
 		protected static string getFilePath(string fileName)
 		{
-			if (!fileName.EndsWith(fileExt)) fileName += fileExt;			// append file extension, if it is not there already
+			// replace all non-alphanumeric characters (special chars & whitespace chars) with underscore
+			Regex.Replace(fileName, @"\W+", "_");
+
+			// append file extension, if it is not there already
+			if (!fileName.EndsWith(fileExt)) fileName += fileExt;
+
 			return fileName;
 		}
 	}
