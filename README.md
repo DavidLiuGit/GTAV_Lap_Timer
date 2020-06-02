@@ -74,6 +74,9 @@ Your race's timing sheet is automatically imported when you import a race, as lo
 - [GitHub source code](https://github.com/DavidLiuGit/GTAV_Lap_Timer)
 
 ### Change Log
+#### 3.0.1
+- added Quarter Mile and Half Mile preset races
+
 #### 3.0
 - implemented lap (circuit) mode! Toggle found at `Menu > Race Controls > Lap Mode`
 - modified preset races to properly support lap mode
