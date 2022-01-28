@@ -74,6 +74,9 @@ Your race's timing sheet is automatically imported when you import a race, as lo
 - [GitHub source code](https://github.com/DavidLiuGit/GTAV_Lap_Timer)
 
 ### Change Log
+#### 3.1.1
+- add option to display speed in KM/h or MPH; KM/h by default
+
 #### 3.1
 - add the option to display speed at each checkpoint
 
