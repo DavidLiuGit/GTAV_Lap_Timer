@@ -144,18 +144,20 @@ namespace LapTimer
 		/// </summary>
 		private void readSettings(ScriptSettings ss)
 		{
-			// read & parse placement mode hotkeys
+			// read & parse placement mode settings
 			string section = "Placement";
 			placementActivateKey = ss.GetValue<Keys>(section, "activate", Keys.F5);
 			addCheckpointKey = ss.GetValue<Keys>(section, "addCheckpoint", Keys.X);
 			undoCheckpointKey = ss.GetValue<Keys>(section, "undoCheckpoint", Keys.Z);
 			clearCheckpointsKey = ss.GetValue<Keys>(section, "clearCheckpoints", Keys.D);
 
-			// read race mode hotkeys
+			// read race mode settings
 			section = "Race";
 			raceActivateKey = ss.GetValue<Keys>(section, "activate", Keys.F6);
 			restartRaceKey = ss.GetValue<Keys>(section, "restartRace", Keys.R);
 			race.freezeTime = ss.GetValue<int>(section, "freezeTime", 750);
+			race.showSpeedTrap = ss.GetValue<bool>(section, "showSpeedTrap", false);
+			race.displaySpeedInKmh = ss.GetValue<bool>(section, "useMetric", true);
 
 			// read Script hotkeys
 			section = "Script";

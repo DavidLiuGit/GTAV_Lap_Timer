@@ -28,7 +28,9 @@ namespace LapTimer
 		public List<SectorCheckpoint> markedSectorCheckpoints = new List<SectorCheckpoint>();     // add to this list when player marks a position; to be used like a stack (i.e. can only delete/pop latest element!)
 
 		// race mode variables
-		public SectorCheckpoint activeCheckpoint;		// track the active sector checkpoint
+		public SectorCheckpoint activeCheckpoint;       // track the active sector checkpoint
+		public bool showSpeedTrap;                      // whether to display speed when checkpoints are crossed
+		public bool displaySpeedInKmh;					// display speed in KM/h; displays in MPH otherwise
 		public int freezeTime;							// time in milliseconds to freeze player's car after race starts. Timer will not run
 		public int activeSector;						// track the active sector number
 		public int lapStartTime;
@@ -151,11 +153,14 @@ namespace LapTimer
 				{
 					// compute time elapsed since race start
 					int elapsedTime = Game.GameTime - lapStartTime;
+					float vehSpeed = veh.Speed;
 
 					// save and display elapsed
 					TimeType tType = activeCheckpoint.timing.updateTiming(elapsedTime, veh.DisplayName);
-					string notifString = activeCheckpoint.timing.getLatestTimingSummaryString();
-					GTA.UI.Notification.Show(string.Format("Checkpoint {0}: ~n~{1}", activeSector, notifString));
+					string notifString = string.Format("Checkpoint {0}: ~n~{1}", activeSector, activeCheckpoint.timing.getLatestTimingSummaryString());
+					if (showSpeedTrap)
+						notifString += String.Format("~n~~s~Speed Trap: {0} km/h", displaySpeedInKmh ? vehSpeed * 3.6f : vehSpeed * 2.23694f);
+					GTA.UI.Notification.Show(notifString);
 
 					// detect if the checkpoint reached is the final checkpoint
 					if (activeCheckpoint.GetHashCode() == finishCheckpoint.GetHashCode())

@@ -16,8 +16,8 @@ If you have already installed an earlier version of the script, make sure to mer
 
 ### Requirements
 - .NET 4.8
-- ScriptHookVDotNet v3
-- [NativeUI](https://github.com/Guad/NativeUI/releases) - no longer bundled
+- [ScriptHookVDotNet v3](https://github.com/crosire/scripthookvdotnet/releases)
+- [NativeUI](https://github.com/Guad/NativeUI/releases)
 
 ---
 ## Usage
@@ -74,6 +74,9 @@ Your race's timing sheet is automatically imported when you import a race, as lo
 - [GitHub source code](https://github.com/DavidLiuGit/GTAV_Lap_Timer)
 
 ### Change Log
+#### 3.1
+- add the option to display speed at each checkpoint
+
 #### 3.0.1
 - added Quarter Mile and Half Mile preset races
 
