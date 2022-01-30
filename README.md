@@ -75,6 +75,8 @@ Your race's timing sheet is automatically imported when you import a race, as lo
 
 ### Change Log
 #### 3.1.1
+- add pre-packaged tracks again
+- update Spa Francorchamps for v3.0
 - add option to display speed in KM/h or MPH; KM/h by default
 
 #### 3.1

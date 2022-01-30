@@ -60,7 +60,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>copy /Y "$(Targetpath)" "F:\Games\Grand Theft Auto V\scripts"
-powershell "Compress-Archive -Force '$(ProjectDir)/assets/$(TargetName).ini', '$(TargetPath)', '$(SolutionDir)README.html' '$(TargetDir)$(TargetName).zip'"</PostBuildEvent>
+powershell "Compress-Archive -Force '$(ProjectDir)/assets/$(TargetName).ini', '$(ProjectDir)/assets/LapTimer', '$(TargetPath)', '$(SolutionDir)README.html' '$(TargetDir)$(TargetName).zip'"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
